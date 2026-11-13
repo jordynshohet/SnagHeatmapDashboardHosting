@@ -1,0 +1,2522 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#C23525">
+  <title>SNAG Campus Expansion Priority Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+  <style>
+    :root {
+      color-scheme: light;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: #17243b;
+      background: #f3f6fa;
+      font-synthesis: none;
+      text-rendering: optimizeLegibility;
+      --navy: #101a2d;
+      --muted: #6b7890;
+      --border: #e2e8f0;
+      --accent: #C23525;
+    }
+
+    * { box-sizing: border-box; }
+
+    body { margin: 0; min-width: 360px; }
+
+    .masthead {
+      padding: 26px max(24px, calc((100vw - 1440px) / 2));
+      color: #f7f9ff;
+      background:
+        radial-gradient(ellipse at 86% 20%, rgb(194 53 37 / 38%), transparent 34%),
+        linear-gradient(112deg, #5c1a13 0%, #8e281e 72%, #C23525 100%);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      margin-bottom: 27px;
+      color: #c8d6f5;
+      font-size: 12px;
+      font-weight: 750;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+    }
+
+    .brand-mark {
+      display: grid;
+      width: 30px;
+      height: 30px;
+      place-items: center;
+      border: 1px solid rgb(255 255 255 / 27%);
+      border-radius: 9px;
+      color: white;
+      background: rgb(255 255 255 / 10%);
+      font-size: 15px;
+      letter-spacing: 0;
+    }
+
+    h1 {
+      max-width: 830px;
+      margin: 0;
+      font-size: clamp(27px, 4vw, 40px);
+      letter-spacing: -.04em;
+      line-height: 1.12;
+    }
+
+    .intro {
+      max-width: 790px;
+      margin: 12px 0 0;
+      color: #c3cee2;
+      font-size: 14px;
+      line-height: 1.65;
+    }
+
+    main {
+      width: min(1440px, 100%);
+      margin: 0 auto;
+      padding: 26px 24px 48px;
+    }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+
+    .metric-card, .panel {
+      border: 1px solid var(--border);
+      border-radius: 13px;
+      background: #fff;
+      box-shadow: 0 4px 14px rgb(26 45 78 / 3%);
+    }
+
+    .metric-card { min-height: 104px; padding: 17px 19px; }
+    .metric-label { color: var(--muted); font-size: 12px; font-weight: 650; }
+    .metric-value { margin-top: 9px; font-size: 27px; font-weight: 750; letter-spacing: -.04em; }
+    .metric-foot { margin-top: 2px; color: var(--muted); font-size: 11px; }
+    .metrics { margin-bottom: 0; }
+    .dashboard-tabs { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 20px; padding: 5px; border: 1px solid var(--border); border-radius: 10px; background: #fff; }
+    .dashboard-tab { min-height: 38px; padding: 0 15px; border: 0; border-radius: 7px; color: #526179; background: transparent; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
+    .dashboard-tab[aria-selected="true"] { color: #fff; background: var(--accent); }
+    .dashboard-tab:focus-visible { outline: 3px solid rgb(194 53 37 / 30%); outline-offset: 2px; }
+    .tab-panel > * + * { margin-top: 20px; }
+    .existing-score-summary { padding: 12px 18px; border-bottom: 1px solid var(--border); color: #526179; font-size: 12px; line-height: 1.6; }
+    .existing-score-summary strong { color: #273750; }
+    .existing-score-scroll { overflow: auto; }
+    .existing-score-table { width: 100%; min-width: 760px; border-spacing: 0; border-collapse: collapse; font-size: 12px; }
+    .existing-score-table th, .existing-score-table td { padding: 9px 12px; border-bottom: 1px solid #edf1f5; text-align: left; }
+    .existing-score-table th { color: #56647a; background: #f8fafc; font-size: 10px; text-transform: uppercase; }
+    .existing-score-table td:nth-child(n+2) { font-variant-numeric: tabular-nums; }
+    .score-guide-panel { margin-bottom: 0; }
+    .score-guide-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; padding: 15px 20px 19px; }
+    .score-guide-item { min-width: 0; padding: 11px; border: 1px solid var(--border); border-radius: 9px; background: #fbfcfe; }
+    .score-guide-label { min-height: 31px; color: var(--muted); font-size: 10px; line-height: 1.45; }
+    .score-guide-range { margin-top: 5px; color: #17243b; font-size: 15px; font-weight: 750; font-variant-numeric: tabular-nums; }
+    .score-guide-weight { margin-top: 3px; color: #758198; font-size: 10px; }
+    .weight-controls { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px 18px; padding: 0 20px 16px; }
+    .weight-control { display: grid; gap: 5px; color: #526179; font-size: 11px; font-weight: 650; }
+    .weight-control-label { display: flex; justify-content: space-between; gap: 8px; }
+    .weight-control-value { color: #17243b; font-variant-numeric: tabular-nums; }
+    .weight-control input[type="range"] { width: 100%; min-height: 24px; accent-color: var(--accent); cursor: pointer; }
+    .weight-status-row { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
+    .weight-total { color: #273750; font-size: 13px; font-weight: 750; font-variant-numeric: tabular-nums; }
+    .weight-status { flex: 1 1 300px; min-height: 16px; color: var(--muted); font-size: 11px; }
+    .weight-status[role="alert"] { color: #a12e25; }
+    .weight-reset { min-height: 34px; padding: 0 11px; border: 1px solid #dce3ed; border-radius: 7px; color: #263650; background: #fff; font: inherit; font-size: 11px; font-weight: 650; cursor: pointer; }
+    .weight-reset:hover { background: #f5f8fc; }
+    .explainable { cursor: pointer; text-decoration: underline dotted rgb(93 111 139 / 55%); text-underline-offset: 3px; }
+    .explainable:focus-visible { border-radius: 3px; outline: 3px solid rgb(194 53 37 / 30%); outline-offset: 3px; }
+    #number-explanation-tooltip {
+      position: fixed;
+      z-index: 2000;
+      width: min(360px, calc(100vw - 24px));
+      max-height: min(500px, calc(100vh - 24px));
+      overflow-y: auto;
+      padding: 12px 14px;
+      border: 1px solid #33425a;
+      border-radius: 9px;
+      color: #f7f9ff;
+      background: #17243b;
+      box-shadow: 0 8px 26px rgb(16 26 45 / 24%);
+      font-size: 12px;
+      font-weight: 450;
+      line-height: 1.55;
+      white-space: pre-line;
+      overscroll-behavior: contain;
+      pointer-events: auto;
+    }
+
+    .panel { overflow: hidden; }
+    .panel-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 20px;
+      padding: 19px 21px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    h2 { margin: 0; font-size: 17px; letter-spacing: -.02em; }
+    .panel-subtitle { margin: 5px 0 0; color: var(--muted); font-size: 12px; line-height: 1.5; }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 7px;
+      color: var(--muted);
+      font-size: 11px;
+      white-space: nowrap;
+    }
+
+    .legend-chip {
+      padding: 5px 8px;
+      border: 1px solid #e8edf2;
+      border-radius: 999px;
+      color: #304158;
+      background: #f8fafc;
+    }
+
+    .legend-dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      margin-right: 5px;
+      border-radius: 50%;
+      background: var(--dot);
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding: 14px 20px;
+      border-bottom: 1px solid var(--border);
+      background: #fbfcfe;
+    }
+
+    .control {
+      min-height: 38px;
+      padding: 0 11px;
+      border: 1px solid #dce3ed;
+      border-radius: 8px;
+      color: #263650;
+      background: #fff;
+      font: inherit;
+      font-size: 12px;
+    }
+
+    .control:focus-visible { outline: 3px solid rgb(194 53 37 / 22%); outline-offset: 1px; }
+    .search { flex: 1 1 210px; max-width: 330px; }
+    .filter { min-width: 190px; }
+    .sort { min-width: 160px; }
+    .result-count { align-self: center; margin-left: auto; color: var(--muted); font-size: 12px; }
+
+    .table-scroll { overflow: auto; max-height: min(68vh, 780px); }
+    table { width: 100%; min-width: 1440px; border-spacing: 0; border-collapse: separate; font-size: 12px; }
+    .rankings-scroll { max-height: min(58vh, 620px); }
+    .rankings-table { min-width: 760px; }
+    .rankings-table th { padding: 9px 12px; }
+    .rankings-table td { padding: 10px 12px; }
+    .rankings-table th:nth-child(1), .rankings-table td:nth-child(1) { width: 64px; min-width: 64px; }
+    .rankings-table th:nth-child(2), .rankings-table td:nth-child(2) { width: auto; min-width: 210px; }
+    .rankings-table th:nth-child(3), .rankings-table td:nth-child(3) { min-width: 120px; }
+    .rankings-table th:nth-child(4), .rankings-table td:nth-child(4) { min-width: 155px; }
+    .rankings-table th:nth-child(5), .rankings-table td:nth-child(5) { min-width: 140px; }
+    .rankings-table th:nth-child(6), .rankings-table td:nth-child(6) { min-width: 150px; }
+    .rankings-table th:nth-child(7), .rankings-table td:nth-child(7) { min-width: 100px; }
+    .sort-button { padding: 0; border: 0; color: inherit; background: transparent; font: inherit; font-weight: inherit; letter-spacing: inherit; text-align: inherit; text-transform: inherit; cursor: pointer; }
+    .sort-button:focus-visible, .campus-button:focus-visible { outline: 3px solid rgb(194 53 37 / 30%); outline-offset: 3px; }
+    .campus-button { display: flex; align-items: center; gap: 8px; padding: 0; border: 0; color: var(--accent); background: transparent; font: inherit; font-weight: 720; text-align: left; text-underline-offset: 2px; cursor: pointer; }
+    .school-logo-badge { position: relative; display: inline-grid; flex: 0 0 32px; width: 32px; height: 32px; place-items: center; overflow: hidden; border-radius: 50%; color: #fff; background: var(--accent); font-size: 9px; font-weight: 800; line-height: 1; }
+    .school-logo-image { position: absolute; inset: 3px; width: 26px; height: 26px; border: 1px solid rgb(255 255 255 / 70%); border-radius: 50%; background: #fff; object-fit: contain; opacity: 0; transition: opacity .12s ease; }
+    .school-logo-badge.has-image .school-logo-image { opacity: 1; }
+    .school-logo-badge.has-image .school-logo-fallback, .school-logo-badge.image-failed .school-logo-image { display: none; }
+    .school-identity { display: flex; min-width: 0; align-items: center; gap: 8px; }
+    .school-identity-label { min-width: 0; }
+    .campus-button .school-identity-label { text-decoration: underline; text-underline-offset: 2px; }
+    .compare-checkbox { width: 18px; height: 18px; accent-color: var(--accent); cursor: pointer; }
+    .compare-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 20px; color: var(--muted); font-size: 11px; }
+    .compare-status { min-height: 16px; }
+    .comparison-panel { margin-top: 12px; }
+    .comparison-table-scroll { overflow: auto; }
+    .comparison-table { min-width: 750px; table-layout: fixed; }
+    .comparison-table th:first-child, .comparison-table td:first-child { width: 190px; text-align: left; }
+    .comparison-table th { vertical-align: top; }
+    .compare-campus-name { display: flex; align-items: center; gap: 8px; color: #263650; font-size: 12px; font-weight: 750; }
+    .compare-campus-meta { display: block; margin-top: 4px; color: var(--muted); font-size: 10px; font-weight: 450; line-height: 1.5; }
+    .compare-cell { min-width: 170px; text-align: left; vertical-align: top; line-height: 1.65; }
+    .compare-cell-label { color: var(--muted); }
+    .compare-best { color: #11632e; font-weight: 750; background: #e6f4ea; }
+    .compare-low { color: #922f2f; font-weight: 750; background: #fdeaea; }
+    .compare-score { display: inline-block; padding: 3px 6px; border-radius: 5px; font-variant-numeric: tabular-nums; }
+    .export-button { min-height: 34px; padding: 0 11px; border: 1px solid #dce3ed; border-radius: 7px; color: #263650; background: #fff; font: inherit; font-size: 11px; font-weight: 650; cursor: pointer; }
+    .export-button:hover { background: #f5f8fc; }
+    .methodology-table { width: 100%; min-width: 0; margin: 10px 0; border-collapse: collapse; font-size: 11px; }
+    .methodology-table th, .methodology-table td { padding: 6px 7px; border-bottom: 1px solid #e8edf2; text-align: left; }
+    .methodology-table th { position: static; color: #56647a; background: #f8fafc; }
+    .rank-score { font-weight: 780; font-variant-numeric: tabular-nums; }
+    .score-detail-button { padding: 0; border: 0; border-radius: 3px; color: inherit; background: transparent; font: inherit; font-weight: 780; font-variant-numeric: tabular-nums; text-align: left; text-decoration: underline dotted rgb(93 111 139 / 55%); text-underline-offset: 3px; cursor: pointer; }
+    .score-detail-button:hover { color: var(--accent); }
+    .score-detail-button:focus-visible { outline: 3px solid rgb(194 53 37 / 30%); outline-offset: 3px; }
+    .provisional-label { display: block; margin-top: 3px; color: #9a6416; font-size: 10px; }
+    th, td { padding: 10px 8px; border-bottom: 1px solid #edf1f5; text-align: center; }
+    th {
+      position: sticky;
+      z-index: 3;
+      top: 0;
+      color: #56647a;
+      background: #f8fafc;
+      font-size: 10px;
+      font-weight: 700;
+      line-height: 1.3;
+      letter-spacing: .025em;
+      text-transform: uppercase;
+      vertical-align: bottom;
+    }
+
+    th:first-child, td:first-child {
+      position: sticky;
+      z-index: 2;
+      left: 0;
+      background: #fff;
+    }
+
+    th:first-child { z-index: 4; background: #f8fafc; }
+    th:nth-child(2), td:nth-child(2) { position: sticky; z-index: 2; left: 47px; background: #fff; }
+    th:nth-child(2) { z-index: 4; background: #f8fafc; }
+    th:nth-child(1), td:nth-child(1) { width: 47px; min-width: 47px; }
+    th:nth-child(2), td:nth-child(2) { width: 230px; min-width: 230px; text-align: left; }
+    th:nth-child(3), td:nth-child(3) { min-width: 135px; text-align: left; }
+    th:nth-child(4), td:nth-child(4) { min-width: 95px; }
+    th.metric-head { min-width: 83px; max-width: 102px; }
+    tr:hover td:first-child, tr:hover td:nth-child(2) { background: #f7f9fc; }
+    tbody tr:last-child td { border-bottom: 0; }
+
+    .rank { color: #8895a8; font-variant-numeric: tabular-nums; font-weight: 650; }
+    .school-name { display: flex; align-items: center; gap: 8px; color: #17243b; font-weight: 720; line-height: 1.4; }
+    .school-state { display: block; margin-top: 2px; color: var(--muted); font-size: 10px; }
+    .benchmark-name { display: flex; align-items: center; gap: 8px; color: #34445c; font-weight: 620; line-height: 1.35; }
+    .rankings-school { display: flex; min-width: 0; flex-direction: column; align-items: flex-start; }
+    .existing-school-identity { min-width: 185px; }
+    .note { display: block; max-width: 190px; overflow: hidden; margin-top: 3px; color: #8490a2; font-size: 10px; line-height: 1.4; text-overflow: ellipsis; white-space: nowrap; }
+
+    .fit-cell { white-space: nowrap; }
+    .fit-score { display: inline-block; min-width: 36px; margin-right: 5px; font-size: 16px; }
+    .heat {
+      display: inline-grid;
+      min-width: 58px;
+      min-height: 38px;
+      gap: 1px;
+      place-items: center;
+      border: 1px solid rgb(90 104 119 / 10%);
+      border-radius: 6px;
+      color: #233149;
+      background: hsl(calc(8 + var(--fit) * 1.35) 74% calc(96% - var(--fit) * .18%));
+      font-size: 11px;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      font-family: inherit;
+      padding: 3px 4px;
+      cursor: pointer;
+    }
+
+    .heat-contribution { color: #526179; font-size: 9px; font-weight: 550; }
+    .heat-missing { color: #8792a3; background: #f1f3f6; }
+    .heat-button:hover { border-color: #9aa8bb; box-shadow: 0 2px 6px rgb(23 36 59 / 12%); }
+    .heat-button:focus-visible { outline: 3px solid rgb(194 53 37 / 32%); outline-offset: 2px; }
+    .empty { padding: 38px 20px; color: var(--muted); text-align: center; }
+
+    .map-panel { margin-bottom: 20px; }
+    .map-legend {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      color: #526179;
+      font-size: 11px;
+    }
+
+    .map-key { display: inline-flex; align-items: center; gap: 6px; }
+    .map-band { display: inline-flex; align-items: center; gap: 5px; padding: 4px 7px; border: 1px solid #e8edf2; border-radius: 999px; color: #304158; background: #fff; white-space: nowrap; }
+    .map-band-swatch { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: var(--band-color); }
+    .map-candidate-icon { width: 15px; height: 20px; overflow: visible; filter: drop-shadow(0 1px 2px rgb(16 26 45 / 35%)); }
+    .map-existing-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #111; }
+    #campus-map { width: 100%; height: min(58vh, 570px); min-height: 360px; background: #fff; }
+    .map-note { padding: 10px 18px; border-top: 1px solid var(--border); color: var(--muted); font-size: 10px; line-height: 1.5; }
+    .map-fallback { padding: 9px 18px; border-top: 1px solid var(--border); color: #78551c; background: #fff9e8; font-size: 11px; line-height: 1.5; }
+    .leaflet-container { font: inherit; }
+    .leaflet-popup-content { min-width: 200px; max-width: 300px; max-height: min(58vh, 440px); overflow-y: auto; margin: 12px 14px; line-height: 1.55; }
+    .leaflet-tooltip { max-width: 350px; white-space: pre-line; }
+    .popup-title { color: #17243b; font-size: 13px; font-weight: 750; }
+    .popup-meta { color: #6b7890; font-size: 11px; }
+    .popup-score { margin-top: 5px; color: #263650; font-size: 12px; font-weight: 700; }
+    .popup-breakdown { margin-top: 7px; color: #526179; font-size: 11px; white-space: pre-line; }
+    .benchmark-dot-icon { border: 0; background: transparent; }
+    .benchmark-dot-icon span { display: block; width: 10px; height: 10px; border: 1px solid #fff; border-radius: 50%; background: #111; box-shadow: 0 1px 3px rgb(16 26 45 / 40%); }
+    .comparison-pin-icon { border: 0; background: transparent; }
+    .comparison-pin-icon svg { display: block; overflow: visible; filter: drop-shadow(0 2px 2px rgb(16 26 45 / 38%)); }
+    .map-error { max-width: 290px; padding: 10px 12px; border: 1px solid #d5dce5; border-radius: 6px; color: #526179; background: rgb(255 255 255 / 94%); font-size: 12px; line-height: 1.5; }
+
+    .method {
+      display: grid;
+      grid-template-columns: minmax(0, 1.7fr) minmax(260px, .8fr);
+      gap: 18px;
+      margin-top: 16px;
+      color: #526179;
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    .method-card { min-width: 0; padding: 18px 20px; border: 1px solid var(--border); border-radius: 12px; background: #fff; }
+    .method-card h2, .method-card h3 { margin: 0; color: #273750; }
+    .method-card h2 { font-size: 16px; }
+    .method-card h3 { font-size: 13px; }
+    .method-card p { margin: 8px 0 0; }
+    .method-intro { min-height: 100%; grid-column: 1 / -1; max-width: 760px; justify-self: center; text-align: center; }
+    .method-equation { margin-top: 12px; padding: 11px 13px; border: 1px solid #f0d7d2; border-radius: 8px; color: #852d23; background: #fff8f6; font-weight: 720; line-height: 1.45; }
+    .method-conditions, .method-notes { grid-column: 1 / -1; }
+    .method-section-heading { margin-bottom: 12px !important; }
+    .condition-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    .condition-card { min-width: 0; padding: 13px 15px; border: 1px solid #e8edf2; border-radius: 9px; background: #fbfcfe; }
+    .condition-card-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 5px 12px; }
+    .condition-card h4 { margin: 0; color: #273750; font-size: 12px; }
+    .condition-weight { padding: 2px 7px; border-radius: 999px; color: #9c3025; background: #fae9e6; font-size: 10px; font-weight: 750; white-space: nowrap; }
+    .condition-question { margin-top: 6px; color: #273750; font-weight: 650; }
+    .condition-card p { margin: 5px 0 0; }
+    .condition-subtotal { padding-top: 7px; border-top: 1px solid #e8edf2; color: #66748a; font-size: 10px; }
+    .methodology-table-wrap { margin-top: 16px; }
+    .methodology-table-wrap h3 { margin-bottom: 7px; }
+    .methodology-table { overflow: hidden; border: 1px solid #e8edf2; border-radius: 8px; }
+    .method-notes-grid { display: grid; grid-column: 1 / -1; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+    .method-note { padding: 14px 16px; border: 1px solid #e8edf2; border-radius: 9px; background: #fff; }
+    .method-note strong { color: #273750; }
+    .method-note p { margin: 5px 0 0; }
+    .custom-school-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; padding: 18px 20px; }
+    .custom-entry-card { min-width: 0; padding: 16px; border: 1px solid var(--border); border-radius: 10px; background: #fff; }
+    .custom-entry-card h3 { margin: 0; color: #273750; font-size: 14px; }
+    .custom-entry-card > p { margin: 5px 0 13px; color: var(--muted); font-size: 11px; line-height: 1.5; }
+    .custom-school-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    .custom-field { display: grid; gap: 5px; color: #526179; font-size: 11px; font-weight: 650; }
+    .custom-field input { width: 100%; min-height: 37px; padding: 7px 9px; border: 1px solid #dce3ed; border-radius: 7px; color: #17243b; background: #fff; font: inherit; font-size: 12px; }
+    .custom-field input:focus-visible, .custom-entry-card input[type="file"]:focus-visible { outline: 3px solid rgb(194 53 37 / 22%); outline-offset: 1px; }
+    .custom-field-wide, .custom-form-actions { grid-column: 1 / -1; }
+    .custom-form-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 3px; }
+    .custom-primary-button, .custom-secondary-button, .custom-remove-button { min-height: 35px; padding: 0 12px; border: 1px solid #dce3ed; border-radius: 7px; color: #263650; background: #fff; font: inherit; font-size: 11px; font-weight: 680; cursor: pointer; }
+    .custom-primary-button { border-color: var(--accent); color: #fff; background: var(--accent); }
+    .custom-primary-button:hover { background: #a92e22; }
+    .custom-secondary-button:hover, .custom-remove-button:hover { background: #f5f8fc; }
+    .custom-status { min-height: 17px; color: var(--muted); font-size: 11px; line-height: 1.5; }
+    .custom-status[role="alert"] { color: #a12e25; }
+    .custom-csv-template { display: inline-block; margin-top: 9px; color: var(--accent); font-size: 11px; font-weight: 650; }
+    .custom-results { display: grid; gap: 12px; padding: 0 20px 20px; }
+    .custom-result { padding: 16px; border: 1px solid var(--border); border-radius: 10px; background: #fff; }
+    .custom-result-head { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 12px; }
+    .custom-result-head h3 { margin: 0; color: #273750; font-size: 15px; }
+    .custom-result-meta { margin-top: 4px; color: var(--muted); font-size: 11px; }
+    .custom-result-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+    .custom-result-score { color: #17243b; font-size: 19px; font-weight: 780; font-variant-numeric: tabular-nums; }
+    .custom-condition-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin-top: 13px; }
+    .custom-condition { padding: 9px 10px; border-radius: 7px; color: #526179; background: #f6f8fb; font-size: 10px; line-height: 1.4; }
+    .custom-condition strong { display: block; margin-top: 3px; color: #273750; font-size: 13px; font-variant-numeric: tabular-nums; }
+    .custom-empty { padding: 20px; color: var(--muted); font-size: 12px; text-align: center; }
+    .footer { margin-top: 15px; color: #8591a3; font-size: 10px; line-height: 1.6; }
+    .error { padding: 18px; color: #a12e25; background: #fff1f0; font-size: 13px; }
+    .campus-details { width: min(1040px, calc(100vw - 28px)); max-width: 1040px; max-height: min(88vh, 960px); overflow: auto; padding: 0; border: 1px solid var(--border); border-radius: 14px; color: #17243b; box-shadow: 0 18px 60px rgb(16 26 45 / 28%); }
+    .campus-details::backdrop { background: rgb(16 26 45 / 55%); }
+    .details-head { display: flex; justify-content: space-between; gap: 18px; padding: 20px 22px; border-bottom: 1px solid var(--border); }
+    .details-head h2 { font-size: 20px; }
+    .details-subtitle { margin: 5px 0 0; color: var(--muted); font-size: 12px; }
+    .details-close { align-self: flex-start; min-width: 34px; min-height: 34px; border: 1px solid var(--border); border-radius: 8px; color: #34445c; background: #fff; font: inherit; cursor: pointer; }
+    .details-content { padding: 18px 22px 22px; }
+    .details-overview { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-bottom: 18px; }
+    .metric-details-overview { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .details-stat { padding: 12px 14px; border: 1px solid var(--border); border-radius: 9px; background: #fbfcfe; }
+    .details-stat-label { color: var(--muted); font-size: 10px; font-weight: 650; }
+    .details-score { margin-top: 5px; font-size: 23px; font-weight: 780; font-variant-numeric: tabular-nums; }
+    .details-category { display: inline-block; margin-top: 5px; padding: 4px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; }
+    .details-category.highest { color: #11632e; background: #e6f4ea; }
+    .details-category.high { color: #28643a; background: #edf7ee; }
+    .details-category.moderate { color: #755c09; background: #fff7da; }
+    .details-category.low { color: #884914; background: #fff0e1; }
+    .details-category.lowest { color: #922f2f; background: #fdeaea; }
+    .details-category.unscored { color: #526179; background: #edf1f5; }
+    .details-completeness { margin-top: 5px; color: var(--muted); font-size: 12px; }
+    .details-section-title { margin: 20px 0 9px; color: #273750; font-size: 14px; }
+    .details-factor-list { display: grid; gap: 9px; }
+    .details-factor { padding: 11px 12px; border: 1px solid var(--border); border-radius: 9px; background: #fff; }
+    .details-factor-head { display: flex; justify-content: space-between; gap: 10px; margin-bottom: 6px; font-size: 12px; }
+    .details-factor-name { font-weight: 680; }
+    .details-factor-value { color: #526179; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .details-bar-track { height: 8px; overflow: hidden; border-radius: 99px; background: #edf1f5; }
+    .details-bar { height: 100%; border-radius: inherit; background: var(--accent); }
+    .details-factor-meta { display: flex; flex-wrap: wrap; gap: 6px 15px; margin-top: 6px; color: var(--muted); font-size: 10px; }
+    .details-factor-source { overflow-wrap: anywhere; }
+    .details-factor-source a, .details-map-link { color: var(--accent); }
+    .details-insights { padding: 12px 14px; border: 1px solid #dfe7f3; border-radius: 9px; color: #34445c; background: #f7f9fc; font-size: 12px; line-height: 1.55; }
+    .details-insights p { margin: 0; }
+    .details-insights p + p { margin-top: 7px; }
+    .details-disclaimer { margin: 10px 0 0; color: var(--muted); font-size: 11px; line-height: 1.5; }
+    .details-map-link { display: inline-block; margin-top: 14px; color: var(--accent); font-size: 12px; font-weight: 650; }
+
+    @media (max-width: 640px) {
+      .details-overview { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .details-content { padding: 14px; }
+      .details-head { padding: 16px; }
+      .details-factor-head { flex-direction: column; gap: 3px; }
+    }
+
+    @media (max-width: 900px) {
+      .metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .score-guide-grid, .weight-controls { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .panel-head { flex-direction: column; }
+      .legend { justify-content: flex-start; }
+      .result-count { margin-left: 0; }
+    }
+
+    @media (max-width: 580px) {
+      .masthead { padding: 22px 18px; }
+      main { padding: 18px 12px 32px; }
+      .metrics { gap: 9px; }
+      .metric-card { min-height: 92px; padding: 13px; }
+      .metric-value { font-size: 23px; }
+      .score-guide-grid, .weight-controls { grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 12px; }
+      #campus-map { height: 430px; min-height: 320px; }
+    }
+    @media (max-width: 760px) {
+      .method { grid-template-columns: 1fr; gap: 12px; }
+      .method-card, .method-notes-grid { grid-column: 1; }
+      .method-notes-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 580px) {
+      .condition-grid { grid-template-columns: 1fr; }
+      .method-card { padding: 15px; }
+      .custom-school-grid, .custom-condition-grid { grid-template-columns: 1fr; }
+      .custom-school-grid { padding: 12px; }
+      .custom-results { padding: 0 12px 12px; }
+      .custom-school-form { grid-template-columns: 1fr; }
+      .custom-field-wide, .custom-form-actions { grid-column: 1; }
+    }
+  </style>
+</head>
+<body>
+  <header class="masthead">
+    <div class="brand"><span class="brand-mark" aria-hidden="true">S</span> SNAG campus research</div>
+    <h1>Prioritize the next SNAG campus</h1>
+    <p class="intro">Prioritize expansion candidates using a transparent, fixed-range score built from student reach, nearby food access, and walkability. Research-linked SNAG campuses remain available for context and do not affect candidate scores.</p>
+  </header>
+
+  <main>
+    <nav class="dashboard-tabs" role="tablist" aria-label="Dashboard tabs">
+      <button class="dashboard-tab" id="tab-home" type="button" role="tab" aria-controls="panel-home" aria-selected="true" tabindex="0">HOME</button>
+      <button class="dashboard-tab" id="tab-weights" type="button" role="tab" aria-controls="panel-weights" aria-selected="false" tabindex="-1">WEIGHTS AND RANKINGS</button>
+      <button class="dashboard-tab" id="tab-assumptions" type="button" role="tab" aria-controls="panel-assumptions" aria-selected="false" tabindex="-1">ASSUMPTIONS</button>
+      <button class="dashboard-tab" id="tab-custom" type="button" role="tab" aria-controls="panel-custom" aria-selected="false" tabindex="-1">ADD A SCHOOL</button>
+    </nav>
+
+    <section class="tab-panel" id="panel-home" role="tabpanel" aria-labelledby="tab-home" tabindex="0">
+      <section class="metrics" id="summary" aria-label="Dashboard summary"></section>
+
+      <section class="panel map-panel" aria-labelledby="map-title">
+        <div class="panel-head">
+          <div>
+            <h2 id="map-title">Expansion opportunity map</h2>
+            <p class="panel-subtitle">Prospective schools are colored and sized by their Campus Expansion Priority Score. Select a marker for its indicator breakdown and research context.</p>
+          </div>
+          <div class="map-legend" aria-label="Map legend">
+            <span class="map-band"><i class="map-band-swatch" style="--band-color:#16803c"></i>75–100</span>
+            <span class="map-band"><i class="map-band-swatch" style="--band-color:#78c98b"></i>60–&lt;75</span>
+            <span class="map-band"><i class="map-band-swatch" style="--band-color:#f1c84b"></i>40–&lt;60</span>
+            <span class="map-band"><i class="map-band-swatch" style="--band-color:#ef8b32"></i>20–&lt;40</span>
+            <span class="map-band"><i class="map-band-swatch" style="--band-color:#d64545"></i>&lt;20</span>
+            <span class="map-key"><svg class="map-candidate-icon" viewBox="0 0 24 32" aria-hidden="true"><path d="M12 1C5.9 1 1 5.9 1 12c0 7.6 11 19 11 19s11-11.4 11-19C23 5.9 18.1 1 12 1Z" fill="#C23525"></path><circle cx="12" cy="12" r="4" fill="white"></circle></svg>Prospective campus</span>
+            <span class="map-key"><i class="map-existing-dot" aria-hidden="true"></i>Existing SNAG campus</span>
+          </div>
+        </div>
+        <div id="campus-map" role="application" aria-label="Map showing comparison schools and SNAG benchmark campuses"></div>
+        <div class="map-fallback" id="map-fallback" role="status" aria-live="polite" hidden></div>
+        <div class="map-note">Prospective campus pin color shows its score band, and pin size increases with score. Valid weight changes update candidate scores and map pins together. State boundaries are based on U.S. Census Bureau TIGERweb data. Existing SNAG campus stars and research links are contextual only. Campus pin locations are approximate. Scores are a screening aid, not a demand forecast or final expansion decision.</div>
+      </section>
+    </section>
+
+    <section class="tab-panel" id="panel-weights" role="tabpanel" aria-labelledby="tab-weights" tabindex="0" hidden>
+    <section class="panel score-guide-panel" aria-labelledby="score-guide-title">
+      <div class="panel-head">
+        <div>
+          <h2 id="score-guide-title">Fixed scoring ranges and weights</h2>
+          <p class="panel-subtitle">Prospective campuses use these fixed ranges; existing SNAG campus scores are calculated separately for reference.</p>
+        </div>
+      </div>
+      <div class="score-guide-grid" id="score-guide" aria-label="Scoring ranges and indicator weights"></div>
+      <div>
+        <div class="panel-subtitle" style="padding: 0 20px 10px">Adjust relative indicator weights. Values are normalized to 100% as you edit; rankings update immediately.</div>
+        <div class="weight-controls" id="weight-controls" aria-label="Adjust scoring weights"></div>
+      </div>
+    </section>
+
+    <section class="panel ranking-panel" aria-labelledby="rankings-title">
+      <div class="panel-head">
+        <div>
+          <h2 id="rankings-title">Campus Priority Rankings</h2>
+          <p class="panel-subtitle">All 19 prospective campuses, ranked by their Campus Expansion Priority Score. Click a university for its score breakdown and map location.</p>
+        </div>
+        <button type="button" class="export-button" id="export-csv">Export all 19 as CSV</button>
+      </div>
+      <div class="controls">
+        <input class="control search" id="rankings-search" type="search" placeholder="Search university" aria-label="Search university">
+        <select class="control filter" id="state-filter" aria-label="Filter by state"></select>
+        <span class="result-count" id="rankings-count" aria-live="polite"></span>
+      </div>
+      <div class="table-scroll rankings-scroll">
+        <table class="rankings-table" id="rankings-table" aria-describedby="scoring-method">
+          <thead id="rankings-head"></thead>
+          <tbody id="rankings-body"></tbody>
+        </table>
+        <div class="empty" id="rankings-empty" hidden>No campuses match your search and state filter.</div>
+      </div>
+      <div class="compare-toolbar">
+        <span>Select 2 or 3 campuses using the Compare checkboxes to view their indicators side by side.</span>
+        <span class="compare-status" id="compare-status" role="status" aria-live="polite"></span>
+      </div>
+      <section class="panel comparison-panel" id="campus-comparison-panel" aria-labelledby="comparison-title" hidden>
+        <div class="panel-head">
+          <div>
+            <h2 id="comparison-title">Campus comparison</h2>
+            <p class="panel-subtitle">Green and red identify the strongest and weakest normalized indicator scores among the selected campuses. These are relative comparisons, not outcome predictions.</p>
+          </div>
+        </div>
+        <div class="comparison-table-scroll">
+          <table class="comparison-table" id="comparison-table"></table>
+        </div>
+      </section>
+    </section>
+
+    <section class="panel" aria-labelledby="heatmap-title">
+      <div class="panel-head">
+        <div>
+          <h2 id="heatmap-title">Indicator score breakdown</h2>
+          <p class="panel-subtitle">Compare each prospective school's normalized indicator scores. The linked SNAG campus is shown for research context only.</p>
+        </div>
+        <div class="legend" aria-label="Heatmap legend">
+          <span><i class="legend-dot" style="--dot:#e59a8f"></i>Lower opportunity signal</span>
+          <span><i class="legend-dot" style="--dot:#f1d88a"></i>Medium opportunity signal</span>
+          <span><i class="legend-dot" style="--dot:#9bd2ae"></i>Higher opportunity signal</span>
+          <span class="legend-chip">Cell = normalized indicator score</span>
+        </div>
+      </div>
+      <div class="controls">
+        <input class="control search" id="search" type="search" placeholder="Search schools or states" aria-label="Search schools or states">
+        <select class="control filter" id="benchmark-filter" aria-label="Filter by research-linked SNAG campus context"></select>
+        <select class="control sort" id="sort" aria-label="Sort comparison schools">
+          <option value="priority">Sort: highest priority</option>
+          <option value="school">Sort: school A–Z</option>
+          <option value="state">Sort: state A–Z</option>
+        </select>
+        <span class="result-count" id="result-count" aria-live="polite"></span>
+      </div>
+      <div class="table-scroll">
+        <table aria-describedby="scoring-method">
+          <thead id="table-head"></thead>
+          <tbody id="table-body"></tbody>
+        </table>
+        <div class="empty" id="empty-state" hidden>No comparison schools match these filters.</div>
+      </div>
+    </section>
+
+    </section>
+
+    <section class="tab-panel" id="panel-assumptions" role="tabpanel" aria-labelledby="tab-assumptions" tabindex="0" hidden>
+    <section class="method" id="scoring-method" aria-label="Scoring method">
+      <article class="method-card method-intro">
+        <h2>How the Campus Expansion Priority Score is calculated</h2>
+        <p>Each of the five indicators is normalized to 0–100 and clamped to its fixed reference range. Higher-is-better metrics use 100 × (value − minimum) ÷ (maximum − minimum); lower-is-better metrics use 100 × (maximum − value) ÷ (maximum − minimum). The priority score is the weighted sum of the four business-condition subtotals.</p>
+        <div class="method-equation">Campus score = Market Size + Market Need + Market Attractiveness + Operational Feasibility</div>
+      </article>
+      <section class="method-card method-conditions" aria-labelledby="conditions-title">
+        <h3 class="method-section-heading" id="conditions-title">Four business conditions, five indicators</h3>
+        <div id="methodology-indicators"></div>
+      </section>
+      <div class="method-notes-grid">
+        <article class="method-note">
+          <strong>Strategic assumptions</strong>
+          <p>Condition definitions, metric directions, and weights are strategic assumptions, not statistically validated predictors of SNAG's success. Walk Score measures pedestrian connectivity, not scooter permissions or actual delivery times.</p>
+        </article>
+        <article class="method-note">
+          <strong>Weights and missing data</strong>
+          <p>Weights shown are the defaults. A new set applies only when its integer percentages total exactly 100%. Missing or invalid values receive no score or contribution, and remaining weights are not redistributed; totals are provisional when data is missing. Out-of-range values are clamped, and ranges do not adapt to the selected schools.</p>
+        </article>
+        <article class="method-note">
+          <strong>Data scope and limitations</strong>
+          <p>Prospective scores use only the 19 candidates' metric values; the 12 existing SNAG campuses do not affect them. Median family income's $72,300–$187,300 range was frozen using all 31 researched campuses. Pell Grant percentage, grocery-store count, and grocery distance are not scored. The score does not predict demand, revenue, profitability, or success and should not alone determine an expansion decision.</p>
+        </article>
+      </div>
+    </section>
+    <section class="panel" aria-labelledby="existing-scores-title">
+      <div class="panel-head">
+        <div>
+          <h2 id="existing-scores-title">Existing SNAG Campus Scores</h2>
+          <p class="panel-subtitle">Existing campuses are scored with the same metrics, fixed ranges, directions, and active weights as prospective schools. They remain separate from prospective rankings and do not determine the weights or ranges.</p>
+        </div>
+      </div>
+      <div class="existing-score-summary" id="existing-score-summary" aria-live="polite"></div>
+      <div class="existing-score-scroll">
+        <table class="existing-score-table">
+          <thead><tr><th>Rank</th><th>Existing SNAG campus</th><th>Score</th><th>Market Size</th><th>Market Need</th><th>Market Attractiveness</th><th>Operational Feasibility</th><th>Data</th></tr></thead>
+          <tbody id="existing-score-body"></tbody>
+        </table>
+      </div>
+    </section>
+    </section>
+
+    <section class="tab-panel" id="panel-custom" role="tabpanel" aria-labelledby="tab-custom" tabindex="0" hidden>
+      <section class="panel" aria-labelledby="custom-schools-title">
+        <div class="panel-head">
+          <div>
+            <h2 id="custom-schools-title">Evaluate another school</h2>
+            <p class="panel-subtitle">Enter the five metric values manually or import a CSV. Custom schools use the same fixed ranges and active weights, and stay separate from the dashboard rankings and map.</p>
+          </div>
+        </div>
+        <div class="custom-school-grid">
+          <section class="custom-entry-card" aria-labelledby="custom-manual-title">
+            <h3 id="custom-manual-title">Add manually</h3>
+            <p>Enter a school and all five metric values to calculate its score and condition breakdown.</p>
+            <form class="custom-school-form" id="custom-school-form">
+              <label class="custom-field custom-field-wide">School name
+                <input name="campus" type="text" required maxlength="120" autocomplete="organization">
+              </label>
+              <label class="custom-field">State
+                <input name="state" type="text" required maxlength="80" autocomplete="address-level1">
+              </label>
+              <label class="custom-field">Undergraduate enrollment
+                <input name="undergrad_enrollment" type="number" min="0" step="1" required>
+              </label>
+              <label class="custom-field">Students living on campus (%)
+                <input name="pct_on_campus" type="number" min="0" max="100" step="any" required>
+              </label>
+              <label class="custom-field">Convenience stores within 1 mile
+                <input name="convenience_1mi" type="number" min="0" step="1" required>
+              </label>
+              <label class="custom-field">Median family income ($)
+                <input name="median_family_income" type="number" min="0" step="any" required>
+              </label>
+              <label class="custom-field">Walk Score
+                <input name="walk_score" type="number" min="0" max="100" step="any" required>
+              </label>
+              <div class="custom-form-actions">
+                <button class="custom-primary-button" type="submit">Calculate score</button>
+                <span class="custom-status" id="custom-manual-status" role="status" aria-live="polite"></span>
+              </div>
+            </form>
+          </section>
+          <section class="custom-entry-card" aria-labelledby="custom-csv-title">
+            <h3 id="custom-csv-title">Import from CSV</h3>
+            <p>Upload a CSV with the exact headers in the downloadable template. Percentages and scores should be numbers without symbols (for example, enter 35 rather than 35%). Each row needs all seven fields.</p>
+            <form id="custom-csv-form">
+              <label class="custom-field custom-field-wide" for="custom-csv-file">CSV file
+                <input id="custom-csv-file" type="file" accept=".csv,text/csv" required>
+              </label>
+              <div class="custom-form-actions">
+                <button class="custom-primary-button" type="submit">Import and score schools</button>
+                <button class="custom-secondary-button" type="button" id="custom-csv-template">Download CSV template</button>
+              </div>
+              <p class="custom-status" id="custom-csv-status" role="status" aria-live="polite"></p>
+            </form>
+          </section>
+        </div>
+        <div class="panel-head">
+          <div>
+            <h2>Custom school results</h2>
+            <p class="panel-subtitle">Scores update when a valid set of weights is applied in Weights and Rankings. Save a school to keep it in this browser after you refresh. Custom entries stay separate from the main map and rankings.</p>
+          </div>
+          <button class="custom-remove-button" id="custom-clear-all" type="button" hidden>Clear all</button>
+        </div>
+        <p class="custom-status" id="custom-save-status" role="status" aria-live="polite"></p>
+        <div class="custom-results" id="custom-results" aria-live="polite"></div>
+      </section>
+    </section>
+    <p class="footer" id="source-note"></p>
+  </main>
+
+  <div id="number-explanation-tooltip" role="dialog" aria-label="Explanation" tabindex="-1" hidden></div>
+  <dialog class="campus-details" id="campus-details" aria-labelledby="details-title">
+    <div class="details-head">
+      <div>
+        <h2 id="details-title"></h2>
+        <p class="details-subtitle" id="details-subtitle"></p>
+      </div>
+      <button class="details-close" id="details-close" type="button" aria-label="Close campus details">×</button>
+    </div>
+    <div class="details-content" id="details-content"></div>
+  </dialog>
+
+  <script src="./dashboard-data.js"></script>
+  <script src="./us-states.js"></script>
+  <script src="./scoring.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script>
+    (() => {
+      "use strict";
+
+      const DATA = window.SNAG_DATA;
+      const SCORING = window.SNAG_SCORING;
+      const benchmarkById = new Map((DATA?.benchmarks ?? []).map((campus) => [campus.id, campus]));
+      let currentWeights = Object.fromEntries((SCORING?.indicators ?? []).map((indicator) => [indicator.key, indicator.weight]));
+      let rankingSort = { key: "priorityScore", direction: "desc" };
+      let selectedCampusId = null;
+      let selectedMetricKey = null;
+      let showingPriorityDetails = false;
+      let selectedCustomCampusId = null;
+      const customSchools = [];
+      const savedCustomSchoolIds = new Set();
+      const customSchoolsStorageKey = "snag-campus-dashboard.custom-schools.v1";
+      let customSchoolSequence = 0;
+      const comparedCampusIds = new Set();
+      const comparisonMarkers = new Map();
+      const metricDetails = new Map([
+        ["undergrad_enrollment", { short: "Undergraduate enrollment", label: "Undergraduate Enrollment", format: "count", source: "src_enrollment", condition: "marketSize", meaning: "Measures the size of the potential student customer base; higher is better." }],
+        ["pct_on_campus", { short: "On-campus housing", label: "Students Living On Campus (%)", format: "percent", source: "src_housing", condition: "marketSize", meaning: "Measures the concentration of students living on campus; higher is better." }],
+        ["median_family_income", { short: "Median family income", label: "Median Family Income", format: "currency", source: "src_income", condition: "marketAttractiveness", meaning: "Higher values are treated as a proxy for purchasing power." }],
+        ["walk_score", { short: "Walk Score", label: "Walk Score", format: "score", source: "src_walk", condition: "operationalFeasibility", meaning: "Higher values are treated as a proxy for scooter delivery accessibility and operational feasibility. Walk Score measures pedestrian connectivity, not scooter permissions or actual delivery times." }],
+        ["convenience_1mi", { short: "Convenience stores within 1 mile", label: "Convenience Stores Within 1 Mile", format: "count", source: "src_food", condition: "marketNeed", meaning: "Fewer nearby convenience stores may indicate a greater unmet need for snack and convenience delivery." }]
+      ]);
+      const metrics = (SCORING?.indicators ?? []).map((indicator) => ({
+        ...indicator,
+        ...metricDetails.get(indicator.key)
+      }));
+      const metricsByKey = new Map(metrics.map((metric) => [metric.key, metric]));
+      const conditionsByKey = new Map((SCORING?.conditions ?? []).map((condition) => [condition.key, condition]));
+      const schoolLogoDomains = new Map([
+        ["arizona", "arizona.edu"],
+        ["arizona-state", "asu.edu"],
+        ["baylor", "baylor.edu"],
+        ["bowling-green-state", "bgsu.edu"],
+        ["cal-poly-slo", "calpoly.edu"],
+        ["central-michigan", "cmich.edu"],
+        ["cincinnati", "uc.edu"],
+        ["colorado-state", "colostate.edu"],
+        ["cu-boulder", "colorado.edu"],
+        ["eastern-michigan", "emich.edu"],
+        ["florida-state", "fsu.edu"],
+        ["gainesville-uf", "ufl.edu"],
+        ["illinois-state", "illinoisstate.edu"],
+        ["indiana-university", "iu.edu"],
+        ["kent-state", "kent.edu"],
+        ["kentucky", "uky.edu"],
+        ["louisville", "louisville.edu"],
+        ["miami-university", "miamioh.edu"],
+        ["ohio-state", "osu.edu"],
+        ["ohio-university", "ohio.edu"],
+        ["penn-state", "psu.edu"],
+        ["purdue", "purdue.edu"],
+        ["south-carolina", "sc.edu"],
+        ["tcu", "tcu.edu"],
+        ["tennessee", "utk.edu"],
+        ["texas-am", "tamu.edu"],
+        ["uc-santa-barbara", "ucsb.edu"],
+        ["university-of-michigan", "umich.edu"],
+        ["university-of-toledo", "utoledo.edu"],
+        ["ut-austin", "utexas.edu"],
+        ["western-michigan", "wmich.edu"]
+      ]);
+      const rows = [];
+      const coordinates = {
+        "uc-santa-barbara": [34.4140, -119.8489],
+        "cu-boulder": [40.0076, -105.2659],
+        "ohio-state": [40.0067, -83.0305],
+        "ohio-university": [39.3243, -82.1013],
+        "miami-university": [39.5109, -84.7319],
+        "bowling-green-state": [41.3784, -83.6404],
+        "cincinnati": [39.1329, -84.5150],
+        "tcu": [32.7093, -97.3624],
+        "ut-austin": [30.2849, -97.7341],
+        "tennessee": [35.9544, -83.9296],
+        "arizona": [32.2319, -110.9501],
+        "gainesville-uf": [29.6436, -82.3549],
+        "cal-poly-slo": [35.3000, -120.6625],
+        "colorado-state": [40.5734, -105.0865],
+        "penn-state": [40.7982, -77.8599],
+        "university-of-michigan": [42.2780, -83.7382],
+        "kent-state": [41.1490, -81.3410],
+        "illinois-state": [40.5100, -88.9900],
+        "central-michigan": [43.5860, -84.7750],
+        "western-michigan": [42.2830, -85.6160],
+        "louisville": [38.2190, -85.7585],
+        "baylor": [31.5493, -97.1143],
+        "texas-am": [30.6187, -96.3365],
+        "south-carolina": [33.9940, -81.0270],
+        "kentucky": [38.0300, -84.5000],
+        "arizona-state": [33.4242, -111.9281],
+        "florida-state": [30.4420, -84.2980],
+        "eastern-michigan": [42.2500, -83.6200],
+        "university-of-toledo": [41.6570, -83.6140],
+        "indiana-university": [39.1680, -86.5230],
+        "purdue": [40.4240, -86.9290]
+      };
+      let campusMap = null;
+      let benchmarkLayer = null;
+      let comparisonLayer = null;
+      let connectionLayer = null;
+
+      function fail(message) {
+        document.querySelector("main").innerHTML = `<div class="error" role="alert">${escapeHtml(message)}</div>`;
+      }
+
+      function escapeHtml(value) {
+        return String(value ?? "").replace(/[&<>"']/g, (character) => ({
+          "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+        }[character]));
+      }
+
+      function schoolIdentityHtml(id, campus) {
+        const domain = schoolLogoDomains.get(id);
+        const initials = String(campus ?? "")
+          .replace(/\([^)]*\)/g, "")
+          .split(/\s+/)
+          .filter((part) => part && !["university", "of", "at", "the", "and", "campus", "tbd"].includes(part.toLowerCase()))
+          .map((part) => part[0])
+          .join("")
+          .slice(0, 3)
+          .toUpperCase() || "?";
+        const image = domain
+          ? `<img class="school-logo-image" src="https://www.google.com/s2/favicons?domain_url=https%3A%2F%2F${domain}&amp;sz=128" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer">`
+          : "";
+        return `<span class="school-identity"><span class="school-logo-badge" aria-hidden="true"><span class="school-logo-fallback">${escapeHtml(initials)}</span>${image}</span><span class="school-identity-label">${escapeHtml(campus)}</span></span>`;
+      }
+
+      document.addEventListener("load", (event) => {
+        const image = event.target;
+        if (!(image instanceof HTMLImageElement) || !image.matches(".school-logo-image")) return;
+        image.closest(".school-logo-badge")?.classList.add("has-image");
+      }, true);
+      document.addEventListener("error", (event) => {
+        const image = event.target;
+        if (!(image instanceof HTMLImageElement) || !image.matches(".school-logo-image")) return;
+        image.closest(".school-logo-badge")?.classList.add("image-failed");
+      }, true);
+
+      const explanationTooltip = document.getElementById("number-explanation-tooltip");
+      let activeExplanationTarget = null;
+
+      function explanationAttributes(text) {
+        return `class="explainable" tabindex="0" aria-haspopup="dialog" aria-expanded="false" aria-controls="number-explanation-tooltip" data-explanation="${escapeHtml(text)}"`;
+      }
+
+      function updateExplanationTooltip() {
+        if (!activeExplanationTarget?.isConnected) {
+          closeExplanationTooltip();
+          return;
+        }
+
+        explanationTooltip.textContent = activeExplanationTarget.dataset.explanation;
+        explanationTooltip.hidden = false;
+        const targetRect = activeExplanationTarget.getBoundingClientRect();
+        const tooltipRect = explanationTooltip.getBoundingClientRect();
+        const margin = 12;
+        const availableWidth = window.innerWidth - margin * 2;
+        const left = Math.max(
+          margin,
+          Math.min(targetRect.left, window.innerWidth - tooltipRect.width - margin)
+        );
+        const below = targetRect.bottom + margin;
+        const top = below + tooltipRect.height <= window.innerHeight - margin
+          ? below
+          : Math.max(margin, Math.min(targetRect.top - tooltipRect.height - margin, window.innerHeight - tooltipRect.height - margin));
+        explanationTooltip.style.left = `${left}px`;
+        explanationTooltip.style.top = `${top}px`;
+        explanationTooltip.style.maxWidth = `${Math.min(360, availableWidth)}px`;
+      }
+
+      function closeExplanationTooltip() {
+        if (activeExplanationTarget?.isConnected) {
+          activeExplanationTarget.setAttribute("aria-expanded", "false");
+        }
+        activeExplanationTarget = null;
+        explanationTooltip.hidden = true;
+      }
+
+      function toggleExplanationTooltip(target) {
+        if (activeExplanationTarget === target) {
+          closeExplanationTooltip();
+          return;
+        }
+
+        closeExplanationTooltip();
+        activeExplanationTarget = target;
+        target.setAttribute("aria-expanded", "true");
+        refreshExplanationTooltip();
+      }
+
+      function explanationTarget(node) {
+        return node instanceof Element ? node.closest("[data-explanation]") : null;
+      }
+
+      function refreshExplanationTooltip() {
+        requestAnimationFrame(updateExplanationTooltip);
+      }
+
+      document.addEventListener("click", (event) => {
+        const target = explanationTarget(event.target);
+        if (target) {
+          toggleExplanationTooltip(target);
+        } else if (!explanationTooltip.contains(event.target)) {
+          closeExplanationTooltip();
+        }
+      });
+
+      document.addEventListener("keydown", (event) => {
+        const target = explanationTarget(event.target);
+        if (target && (event.key === "Enter" || event.key === " ")) {
+          event.preventDefault();
+          toggleExplanationTooltip(target);
+        } else if (event.key === "Escape" && !explanationTooltip.hidden) {
+          closeExplanationTooltip();
+        }
+      });
+
+      document.addEventListener("scroll", () => {
+        if (activeExplanationTarget) refreshExplanationTooltip();
+      }, true);
+      window.addEventListener("resize", refreshExplanationTooltip);
+
+      function numericValue(value) {
+        if (typeof value === "number" && Number.isFinite(value)) return value;
+        if (typeof value !== "string") return null;
+        const range = value.match(/(-?\d+(?:\.\d+)?)\s*[-–]\s*(-?\d+(?:\.\d+)?)/);
+        if (range) return (Number(range[1]) + Number(range[2])) / 2;
+        const firstNumber = value.match(/-?\d+(?:\.\d+)?/);
+        return firstNumber ? Number(firstNumber[0]) : null;
+      }
+
+      function normalize(value) {
+        return String(value ?? "").toLocaleLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+      }
+
+      function getBenchmark(comparison) {
+        if (/^Ohio cluster equivalent/i.test(comparison.snag_note ?? "")) {
+          const cluster = (DATA.benchmarks ?? []).filter((campus) => campus.state === "Ohio");
+          if (!cluster.length) throw new Error("The Ohio cluster reference has no benchmark campuses.");
+          return {
+            id: "ohio-cluster",
+            campus: "Ohio campus cluster average",
+            state: "Ohio",
+            members: cluster,
+            cluster: true
+          };
+        }
+
+        const match = (comparison.snag_note ?? "").match(/^Compared to\s+(.+?)(?:\s+[–—-]\s+|;|$)/i);
+        if (!match) throw new Error(`No benchmark school is identified in the research note for ${comparison.campus}.`);
+        const target = normalize(match[1]);
+        const benchmark = (DATA.benchmarks ?? []).find((campus) => {
+          const name = normalize(campus.campus);
+          return name === target || name.startsWith(`${target} `) ||
+            (target === "arizona" && campus.id === "arizona") ||
+            (target === "uf" && name.includes("uf"));
+        });
+        if (!benchmark) throw new Error(`Benchmark "${match[1]}" for ${comparison.campus} is missing from the SNAG campus data.`);
+        return benchmark;
+      }
+
+      function clusterValue(campuses, key) {
+        if (key === "conference") {
+          const counts = new Map();
+          for (const campus of campuses) {
+            const value = campus[key];
+            if (value) counts.set(value, (counts.get(value) ?? 0) + 1);
+          }
+          return [...counts].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))[0]?.[0] ?? null;
+        }
+        const values = campuses.map((campus) => numericValue(campus[key])).filter((value) => value !== null);
+        return values.length ? values.reduce((total, value) => total + value, 0) / values.length : null;
+      }
+
+      function benchmarkValue(benchmark, key) {
+        return benchmark.cluster ? clusterValue(benchmark.members, key) : benchmark[key];
+      }
+
+      function formatValue(metric, value) {
+        if (value === null || value === undefined || value === "") return "Not available";
+        const number = numericValue(value);
+        if (number === null) return String(value);
+        if (metric.format === "count") return Math.round(number).toLocaleString();
+        if (metric.format === "percent") return `${number.toLocaleString(undefined, { maximumFractionDigits: 1 })}%`;
+        if (metric.format === "currency") return `$${Math.round(number).toLocaleString()}`;
+        if (metric.format === "miles") return `${number.toLocaleString(undefined, { maximumFractionDigits: 2 })} mi`;
+        return number.toLocaleString(undefined, { maximumFractionDigits: 1 });
+      }
+
+      function overallExplanation(row) {
+        const available = row.cells.filter((cell) => cell.score !== null);
+        const values = available.map((cell) => `${cell.metric.label}: ${cell.score.toFixed(2)} × ${cell.metric.weight} = ${cell.weightedContribution.toFixed(2)}`).join("; ");
+        const conditionValues = SCORING.conditions.map((condition) => {
+          const weight = metrics
+            .filter((metric) => metric.condition === condition.key)
+            .reduce((sum, metric) => sum + metric.weight, 0);
+          const subtotal = row.score.conditionSubtotals[condition.key];
+          return `${condition.label} (${(weight * 100).toFixed(0)}%): ${subtotal.toFixed(2)}`;
+        }).join("; ");
+        return [
+          `What it tells you: ${row.comparison.campus}'s weighted Campus Expansion Priority Score, based only on that prospective campus's five indicators.`,
+          `How calculated: priority score = ${SCORING.conditions.map((condition) => condition.label).join(" + ")}. No comparison to an existing SNAG campus is used. Displayed score: ${row.priorityScore === null ? "N/A" : `${row.priorityScore.toFixed(2)} / 100`}; full precision is retained for calculations.`,
+          `Business condition subtotals: ${conditionValues}. These subtotals add to the final priority score.`,
+          `Weighted contributions: ${values || "none available"}.`,
+          `Data completeness: ${row.score.dataCompleteness.availableCount} of ${row.score.dataCompleteness.indicatorCount} indicators (${(row.score.dataCompleteness.fraction * 100).toFixed(1)}%). ${row.provisional ? "This subtotal is provisional: missing values have no score or contribution, and remaining weights are not reweighted." : "All indicators are present; the total is complete."}`,
+          "Interpretation: a transparent screening score, not a probability of success, demand forecast, or expansion decision. The research-linked SNAG campus is shown for context only."
+        ].join("\n\n");
+      }
+
+      function sourceFor(school, metric) {
+        const value = school?.[metric.source];
+        return typeof value === "string" && /^https?:\/\//i.test(value) ? value : "";
+      }
+
+      try {
+        if (!SCORING) throw new Error("The scoring engine did not load. Check that scoring.js is available next to index.html.");
+        if (!DATA?.benchmarks?.length || !DATA?.comparisons?.length) throw new Error("Dashboard data is missing benchmark or comparison schools.");
+        if (metrics.length !== SCORING.indicators.length) throw new Error("Scoring indicator display details are incomplete.");
+        const scoredCampuses = new Map(
+          SCORING.scoreComparisons(DATA.comparisons).map((score) => [score.id, score])
+        );
+
+        for (const comparison of DATA.comparisons) {
+          const benchmark = getBenchmark(comparison);
+          const score = scoredCampuses.get(comparison.id);
+          if (!score) throw new Error(`The scoring engine returned no score for ${comparison.campus}.`);
+          const cells = score.indicators.map((indicator) => ({
+            ...indicator,
+            metric: metricsByKey.get(indicator.key),
+            score: indicator.normalizedScore,
+            candidateRaw: indicator.rawValue
+          }));
+          rows.push({
+            comparison,
+            benchmark,
+            cells,
+            score,
+            priorityScore: score.total,
+            provisional: score.provisional
+          });
+        }
+      } catch (error) {
+        fail(error instanceof Error ? error.message : "The dashboard could not calculate campus expansion priority scores.");
+        return;
+      }
+
+      function fitColor(score) {
+        if (typeof score !== "number" || !Number.isFinite(score)) return "#8792a3";
+        if (score >= 75) return "#16803c";
+        if (score >= 60) return "#78c98b";
+        if (score >= 40) return "#f1c84b";
+        if (score >= 20) return "#ef8b32";
+        return "#d64545";
+      }
+
+      function comparisonPinIcon(color, score, selected = false) {
+        const height = 30 + Math.max(0, Math.min(100, score ?? 0)) * 0.08 + (selected ? 4 : 0);
+        const width = height * 0.75;
+        const icon = L.divIcon({
+          className: "comparison-pin-icon",
+          html: `<svg width="${width}" height="${height}" viewBox="0 0 24 32" aria-hidden="true"><path d="M12 1C5.9 1 1 5.9 1 12c0 7.6 11 19 11 19s11-11.4 11-19C23 5.9 18.1 1 12 1Z" fill="${color}" stroke="white" stroke-width="1.5"></path><circle cx="12" cy="12" r="4" fill="white"></circle></svg>`,
+          iconSize: [width, height],
+          iconAnchor: [width / 2, height]
+        });
+        return { icon, height };
+      }
+
+      function popup(title, subtitle, row = null) {
+        const rank = row === null ? null : priorityRankMap().get(row.comparison.id);
+        const scoreLine = row === null ? "" : `
+          <div class="popup-score">Rank #${rank} · ${row.priorityScore === null ? "N/A" : `${row.priorityScore.toFixed(2)} / 100`}${row.provisional ? " · provisional subtotal" : ""}</div>
+          <div class="popup-breakdown">${escapeHtml(overallExplanation(row))}</div>`;
+        return `<div class="popup-title">${escapeHtml(title)}</div><div class="popup-meta">${escapeHtml(subtitle)}</div>${scoreLine}`;
+      }
+
+      function initializeMap() {
+        const container = document.getElementById("campus-map");
+        if (!window.L) {
+          container.innerHTML = `<div class="map-error" role="status">The map could not load because the Leaflet map library is unavailable. Check your internet connection and reload the page.</div>`;
+          return;
+        }
+
+        if (!window.SNAG_US_STATES?.features?.length) {
+          throw new Error("The U.S. state boundary data did not load. Check that us-states.js is available next to index.html.");
+        }
+
+        campusMap = L.map(container, { scrollWheelZoom: false, attributionControl: false });
+        const stateLayer = L.geoJSON(window.SNAG_US_STATES, {
+          interactive: false,
+          style: {
+            color: "#111",
+            weight: 2.4,
+            opacity: 1,
+            fillColor: "#fff",
+            fillOpacity: 1,
+            lineCap: "round",
+            lineJoin: "round"
+          }
+        }).addTo(campusMap);
+        campusMap.fitBounds(stateLayer.getBounds(), { padding: [18, 18] });
+        benchmarkLayer = L.layerGroup().addTo(campusMap);
+        comparisonLayer = L.layerGroup().addTo(campusMap);
+        connectionLayer = L.layerGroup().addTo(campusMap);
+
+        const clusterCoordinates = DATA.benchmarks
+          .filter((school) => school.state === "Ohio")
+          .map((school) => coordinates[school.id])
+          .filter(Boolean);
+        const clusterCenter = [
+          clusterCoordinates.reduce((sum, point) => sum + point[0], 0) / clusterCoordinates.length,
+          clusterCoordinates.reduce((sum, point) => sum + point[1], 0) / clusterCoordinates.length
+        ];
+
+        for (const benchmark of DATA.benchmarks) {
+          const point = coordinates[benchmark.id];
+          if (!point) throw new Error(`Map coordinates are missing for ${benchmark.campus}.`);
+          const marker = L.marker(point, {
+            icon: L.divIcon({ className: "benchmark-dot-icon", html: "<span></span>", iconSize: [10, 10], iconAnchor: [5, 5] })
+          }).bindPopup(popup(benchmark.campus, `${benchmark.city}, ${benchmark.state} · SNAG benchmark`, null));
+          marker.bindTooltip(benchmark.campus);
+          marker.addTo(benchmarkLayer);
+        }
+
+        if (clusterCoordinates.length) {
+          L.marker(clusterCenter, {
+            icon: L.divIcon({ className: "benchmark-dot-icon", html: "<span></span>", iconSize: [10, 10], iconAnchor: [5, 5] })
+          }).bindPopup(popup("Ohio campus cluster average", "Five Ohio SNAG campuses · profile average, location shown at their geographic center", null))
+            .bindTooltip("Ohio campus cluster average")
+            .addTo(benchmarkLayer);
+        }
+      }
+
+      function updateMap(visible, selectedBenchmark) {
+        if (!campusMap) return;
+        comparisonLayer.clearLayers();
+        connectionLayer.clearLayers();
+        comparisonMarkers.clear();
+        const missingCoordinates = [];
+
+        for (const row of visible) {
+          const comparisonPoint = coordinates[row.comparison.id];
+          if (!comparisonPoint) {
+            missingCoordinates.push(row.comparison.campus);
+            continue;
+          }
+          const color = fitColor(row.priorityScore);
+          const { icon } = comparisonPinIcon(color, row.priorityScore);
+          const marker = L.marker(comparisonPoint, { icon })
+            .bindTooltip(escapeHtml(row.comparison.campus), { sticky: true, direction: "top" });
+          marker.addTo(comparisonLayer);
+          comparisonMarkers.set(row.comparison.id, { marker, row, color });
+          marker.on("click", () => showCampusDetails(row));
+
+          if (!row.benchmark.cluster) {
+            const benchmarkPoint = coordinates[row.benchmark.id];
+            if (benchmarkPoint) {
+              L.polyline([benchmarkPoint, comparisonPoint], {
+                color, weight: 1.5, opacity: 0.45, dashArray: "5 6", interactive: false
+              }).addTo(connectionLayer);
+            }
+          } else {
+            const clusterPoints = row.benchmark.members.map((campus) => coordinates[campus.id]).filter(Boolean);
+            const center = [
+              clusterPoints.reduce((sum, point) => sum + point[0], 0) / clusterPoints.length,
+              clusterPoints.reduce((sum, point) => sum + point[1], 0) / clusterPoints.length
+            ];
+            L.polyline([center, comparisonPoint], {
+              color, weight: 1.5, opacity: 0.45, dashArray: "5 6", interactive: false
+            }).addTo(connectionLayer);
+          }
+        }
+        const fallback = document.getElementById("map-fallback");
+        fallback.hidden = missingCoordinates.length === 0;
+        fallback.textContent = missingCoordinates.length
+          ? `Map location unavailable for ${missingCoordinates.length} prospective campus${missingCoordinates.length === 1 ? "" : "es"}: ${missingCoordinates.join(", ")}. No marker is shown because no grounded coordinates are recorded. These campuses remain in the rankings.`
+          : "";
+
+        const activeBenchmarks = selectedBenchmark === "all" ? rows.map((row) => row.benchmark.id) : [selectedBenchmark];
+        benchmarkLayer.eachLayer((layer) => {
+          const popupText = layer.getPopup()?.getContent() ?? "";
+          const isCluster = popupText.includes("Ohio campus cluster average");
+          const isActive = isCluster
+            ? activeBenchmarks.includes("ohio-cluster")
+            : activeBenchmarks.some((id) => {
+              const benchmark = benchmarkById.get(id);
+              return benchmark && popupText.includes(escapeHtml(benchmark.campus));
+            });
+          if (selectedBenchmark !== "all") {
+            const opacity = isActive ? 1 : 0.35;
+            if (typeof layer.setOpacity === "function") layer.setOpacity(opacity);
+            else if (typeof layer.setStyle === "function") layer.setStyle({ opacity, fillOpacity: opacity });
+          }
+        });
+        connectionLayer.eachLayer((layer) => {
+          if (typeof layer.bringToBack === "function") layer.bringToBack();
+        });
+        highlightCampusMarker(selectedCampusId);
+      }
+
+      function highlightCampusMarker(campusId) {
+        for (const [id, entry] of comparisonMarkers) {
+          const selected = id === campusId;
+          const { icon } = comparisonPinIcon(entry.color, entry.row.priorityScore, selected);
+          entry.marker.setIcon(icon);
+          entry.marker.setZIndexOffset(selected ? 1000 : 0);
+        }
+
+        const selected = comparisonMarkers.get(campusId);
+        if (selected && campusMap) campusMap.panTo(selected.marker.getLatLng());
+      }
+
+      function sortRows(items) {
+        const mode = document.getElementById("sort").value;
+        return [...items].sort((a, b) => {
+          if (mode === "school") return a.comparison.campus.localeCompare(b.comparison.campus);
+          if (mode === "state") return a.comparison.state.localeCompare(b.comparison.state) || a.comparison.campus.localeCompare(b.comparison.campus);
+          return comparePriority(a, b);
+        });
+      }
+
+      function comparePriority(a, b) {
+        if (a.provisional !== b.provisional) return a.provisional ? 1 : -1;
+        return (b.priorityScore ?? -Infinity) - (a.priorityScore ?? -Infinity) || a.comparison.campus.localeCompare(b.comparison.campus);
+      }
+
+      function addSummary() {
+        const ranked = sortRows(rows);
+        const scoredRows = rows.filter((row) => row.priorityScore !== null);
+        const mean = scoredRows.length
+          ? scoredRows.reduce((sum, row) => sum + row.priorityScore, 0) / scoredRows.length
+          : null;
+        const minimumScore = scoredRows.length ? Math.min(...scoredRows.map((row) => row.priorityScore)) : null;
+        const maximumScore = scoredRows.length ? Math.max(...scoredRows.map((row) => row.priorityScore)) : null;
+        const provisionalCount = rows.filter((row) => row.provisional).length;
+        const summary = [
+          {
+            label: "Prospective campuses",
+            value: rows.length,
+            foot: `${provisionalCount} provisional score${provisionalCount === 1 ? "" : "s"}`,
+            explanation: `What it counts: prospective comparison schools included in the dashboard.\n\nHow calculated: counts the ${rows.length} comparison-school rows in the source workbook. Search and filters change the visible subset, not this total. ${provisionalCount} scores are provisional because of missing indicator data.`
+          },
+          {
+            label: "Average priority score",
+            value: mean === null ? "N/A" : `${mean.toFixed(2)} / 100`,
+            foot: `across ${scoredRows.length} scored campuses`,
+            explanation: `What it tells you: the average unrounded Campus Expansion Priority Score across the ${scoredRows.length} campuses with at least one usable indicator. The total is the sum of normalized scores multiplied by fixed weights; missing indicators are not reweighted. ${provisionalCount} campus scores are provisional.`
+          },
+          {
+            label: "Priority score range",
+            value: scoredRows.length ? `${minimumScore.toFixed(2)}–${maximumScore.toFixed(2)}` : "N/A",
+            foot: "lowest to highest score",
+            explanation: `What it tells you: the range of available Campus Expansion Priority Scores. ${scoredRows.length ? `The displayed minimum is ${minimumScore.toFixed(2)} and maximum is ${maximumScore.toFixed(2)}; full precision is retained for calculations.` : "No total scores are currently available."} Missing indicators are not assigned points or reweighted.`
+          },
+          {
+            label: "Highest priority",
+            value: scoredRows.length ? ranked[0].comparison.campus : "N/A",
+            foot: scoredRows.length ? `${ranked[0].provisional ? "Provisional subtotal" : "Complete score"} · ${ranked[0].priorityScore.toFixed(2)} / 100` : "no usable scores",
+            explanation: scoredRows.length
+              ? `What it identifies: the highest-ranked candidate by Campus Expansion Priority Score. Complete totals sort ahead of provisional subtotals.\n\n${overallExplanation(ranked[0])}`
+              : "No candidate currently has a usable indicator score."
+          }
+        ];
+        document.getElementById("summary").innerHTML = summary.map((item) => `
+          <article class="metric-card explainable" role="button" tabindex="0" aria-haspopup="dialog" aria-expanded="false" aria-controls="number-explanation-tooltip" data-explanation="${escapeHtml(item.explanation)}">
+            <div class="metric-label">${item.label}</div>
+            <div class="metric-value">${escapeHtml(item.value)}</div>
+            <div class="metric-foot">${escapeHtml(item.foot)}</div>
+          </article>`).join("");
+      }
+
+      function addScoringGuide() {
+        document.getElementById("score-guide").innerHTML = metrics.map((metric) => {
+          const range = `${formatValue(metric, metric.min)}–${formatValue(metric, metric.max)}`;
+          const formula = metric.direction === "higher"
+            ? "100 × (value − min) ÷ (max − min)"
+            : "100 × (max − value) ÷ (max − min)";
+          const explanation = `${metric.meaning}\n\nFixed range: ${range} (${metric.direction}-is-better).\n\nNormalized score: clamp(${formula}, 0, 100).\n\nWeight: ${metric.weight} of the total score. Weighted contribution = normalized score × weight.`;
+          const condition = conditionsByKey.get(metric.condition);
+          return `<article class="score-guide-item explainable" role="button" tabindex="0" aria-haspopup="dialog" aria-expanded="false" aria-controls="number-explanation-tooltip" data-explanation="${escapeHtml(explanation)}">
+            <div class="score-guide-label">${escapeHtml(metric.label)}</div>
+            <div class="score-guide-range">${escapeHtml(range)}</div>
+            <div class="score-guide-weight">${escapeHtml(condition.label)} · ${(metric.weight * 100).toLocaleString(undefined, { maximumFractionDigits: 2 })}% of score</div>
+          </article>`;
+        }).join("");
+      }
+
+      function renderMethodologyIndicators() {
+        document.getElementById("methodology-indicators").innerHTML = `
+          <div class="condition-grid">${SCORING.conditions.map((condition, index) => {
+            const weight = metrics
+              .filter((metric) => metric.condition === condition.key)
+              .reduce((sum, metric) => sum + metric.weight, 0);
+            const subtotalFormula = metrics
+              .filter((metric) => metric.condition === condition.key)
+              .map((metric) => `${(metric.weight * 100).toFixed(0)}% ${metric.short} score`)
+              .join(" + ");
+            return `<article class="condition-card">
+              <div class="condition-card-head"><h4>Condition ${index + 1} · ${escapeHtml(condition.label)}</h4><span class="condition-weight">${(weight * 100).toFixed(0)}% of score</span></div>
+              <p class="condition-question">${escapeHtml(condition.question)}</p>
+              <p>${escapeHtml(condition.description)}</p>
+              <p class="condition-subtotal"><strong>Subtotal:</strong> ${escapeHtml(subtotalFormula)}</p>
+            </article>`;
+          }).join("")}</div>
+          <div class="methodology-table-wrap">
+          <h3>Indicator reference</h3>
+          <table class="methodology-table">
+            <thead><tr><th>Indicator</th><th>Business condition</th><th>Direction</th><th>Fixed range</th><th>Weight</th></tr></thead>
+            <tbody>${metrics.map((metric) => `<tr>
+              <td>${escapeHtml(metric.label)}</td>
+              <td>${escapeHtml(conditionsByKey.get(metric.condition).label)}</td>
+              <td>${escapeHtml(metric.direction)} is better</td>
+              <td>${escapeHtml(formatValue(metric, metric.min))}–${escapeHtml(formatValue(metric, metric.max))}</td>
+              <td>${(metric.weight * 100).toFixed(0)}%</td>
+            </tr>`).join("")}</tbody>
+          </table>
+          </div>`;
+      }
+
+      function renderExistingCampusScores(weights = currentWeights) {
+        const existingScores = SCORING.scoreComparisons(DATA.benchmarks, weights)
+          .sort((a, b) => {
+            if (a.provisional !== b.provisional) return a.provisional ? 1 : -1;
+            return (b.total ?? -Infinity) - (a.total ?? -Infinity) || a.campus.localeCompare(b.campus);
+          });
+        if (existingScores.length !== DATA.benchmarks.length) {
+          throw new Error("The scoring engine did not return a score for every existing SNAG campus.");
+        }
+
+        const scoredExisting = existingScores.filter((score) => score.total !== null);
+        const scoredProspective = rows.filter((row) => row.priorityScore !== null);
+        const existingMean = scoredExisting.length
+          ? scoredExisting.reduce((sum, score) => sum + score.total, 0) / scoredExisting.length
+          : null;
+        const prospectiveMean = scoredProspective.length
+          ? scoredProspective.reduce((sum, row) => sum + row.priorityScore, 0) / scoredProspective.length
+          : null;
+        const existingMaximum = scoredExisting.length
+          ? Math.max(...scoredExisting.map((score) => score.total))
+          : null;
+        const existingMinimum = scoredExisting.length
+          ? Math.min(...scoredExisting.map((score) => score.total))
+          : null;
+        const aboveExistingMean = existingMean === null
+          ? 0
+          : scoredProspective.filter((row) => row.priorityScore > existingMean).length;
+        const aboveExistingMaximum = existingMaximum === null
+          ? 0
+          : scoredProspective.filter((row) => row.priorityScore > existingMaximum).length;
+
+        document.getElementById("existing-score-summary").innerHTML = `
+          <strong>At the active weights:</strong>
+          Existing SNAG campuses average ${existingMean === null ? "N/A" : `${existingMean.toFixed(2)} / 100`}
+          (range ${existingMinimum === null ? "N/A" : `${existingMinimum.toFixed(2)}–${existingMaximum.toFixed(2)}`});
+          prospective campuses average ${prospectiveMean === null ? "N/A" : `${prospectiveMean.toFixed(2)} / 100`}.
+          ${aboveExistingMean} of ${scoredProspective.length} prospective campuses score above the existing-campus average;
+          ${aboveExistingMaximum} score above the highest existing-campus score.
+          This is a descriptive benchmark, not an outcome or expansion threshold.`;
+        document.getElementById("existing-score-body").innerHTML = existingScores.map((score, index) => `
+          <tr>
+            <td>${index + 1}</td>
+            <td class="existing-school-identity">${schoolIdentityHtml(score.id, score.campus)}</td>
+            <td>${score.total === null ? "N/A" : `${score.total.toFixed(2)} / 100`}${score.provisional ? " · provisional" : ""}</td>
+            ${SCORING.conditions.map((condition) => `<td>${score.conditionSubtotals[condition.key].toFixed(2)}</td>`).join("")}
+            <td>${score.dataCompleteness.availableCount}/${score.dataCompleteness.indicatorCount}</td>
+          </tr>`).join("");
+      }
+
+      function setupDashboardTabs() {
+        const tabs = [...document.querySelectorAll(".dashboard-tab")];
+        const activate = (tab, moveFocus = false) => {
+          for (const candidate of tabs) {
+            const selected = candidate === tab;
+            candidate.setAttribute("aria-selected", String(selected));
+            candidate.tabIndex = selected ? 0 : -1;
+            document.getElementById(candidate.getAttribute("aria-controls")).hidden = !selected;
+          }
+          if (moveFocus) tab.focus();
+          if (tab.id === "tab-home" && campusMap) {
+            requestAnimationFrame(() => campusMap.invalidateSize());
+          }
+        };
+
+        for (const [index, tab] of tabs.entries()) {
+          tab.addEventListener("click", () => activate(tab));
+          tab.addEventListener("keydown", (event) => {
+            let nextIndex = index;
+            if (event.key === "ArrowRight") nextIndex = (index + 1) % tabs.length;
+            else if (event.key === "ArrowLeft") nextIndex = (index - 1 + tabs.length) % tabs.length;
+            else if (event.key === "Home") nextIndex = 0;
+            else if (event.key === "End") nextIndex = tabs.length - 1;
+            else return;
+            event.preventDefault();
+            activate(tabs[nextIndex], true);
+          });
+        }
+      }
+
+      function addWeightControls() {
+        const container = document.getElementById("weight-controls");
+        container.innerHTML = metrics.map((metric) => `
+          <label class="weight-control" for="weight-${metric.key}">
+            <span class="weight-control-label"><span>${escapeHtml(metric.short)}</span><output class="weight-control-value" id="weight-value-${metric.key}" for="weight-${metric.key}">${currentWeights[metric.key] * 100}%</output></span>
+            <input id="weight-${metric.key}" type="range" min="0" max="100" step="1" value="${currentWeights[metric.key] * 100}" data-weight-key="${metric.key}" aria-label="${escapeHtml(metric.short)} weight percentage">
+          </label>`).join("") + `
+          <div class="weight-status-row">
+            <output class="weight-total" id="weight-total" aria-live="polite"></output>
+            <div class="weight-status" id="weight-status" role="status" aria-live="polite"></div>
+            <button type="button" class="weight-reset" id="weight-reset">Reset to Defaults</button>
+          </div>`;
+        container.addEventListener("input", updateWeights);
+        document.getElementById("weight-reset").addEventListener("click", resetWeights);
+        updateWeightStatus();
+      }
+
+      function updateWeightStatus(message = "") {
+        const status = document.getElementById("weight-status");
+        const totalOutput = document.getElementById("weight-total");
+        if (!status || !totalOutput) return;
+        const values = metrics.map((metric) => document.getElementById(`weight-${metric.key}`).valueAsNumber);
+        const validValues = values.every((value) => Number.isInteger(value) && value >= 0 && value <= 100);
+        const total = values.reduce((sum, value) => sum + (Number.isFinite(value) ? value : 0), 0);
+        for (const metric of metrics) {
+          const slider = document.getElementById(`weight-${metric.key}`);
+          document.getElementById(`weight-value-${metric.key}`).value = `${slider.value}%`;
+        }
+        totalOutput.value = `Total: ${total}%`;
+        status.textContent = message || (validValues && total === 100
+          ? "Applied. Rankings, map, and profiles use these weights."
+          : `Weights must total exactly 100% to apply. Rankings still use the last valid weights (${(Object.values(currentWeights).reduce((sum, weight) => sum + weight, 0) * 100).toFixed(0)}%).`);
+        status.setAttribute("role", message || !validValues || total !== 100 ? "alert" : "status");
+      }
+
+      function updateWeights() {
+        const values = metrics.map((metric) => ({
+          key: metric.key,
+          value: document.getElementById(`weight-${metric.key}`).valueAsNumber
+        }));
+        const total = values.reduce((sum, entry) => sum + entry.value, 0);
+        updateWeightStatus();
+        if (values.some((entry) => !Number.isInteger(entry.value) || entry.value < 0 || entry.value > 100) || total !== 100) {
+          return;
+        }
+
+        const validWeights = Object.fromEntries(values.map((entry) => [entry.key, entry.value / 100]));
+        try {
+          const scoredCampuses = new Map(
+            SCORING.scoreComparisons(DATA.comparisons, validWeights).map((score) => [score.id, score])
+          );
+          for (const row of rows) {
+            const score = scoredCampuses.get(row.comparison.id);
+            if (!score) throw new Error(`The scoring engine returned no score for ${row.comparison.campus}.`);
+            row.score = score;
+            row.priorityScore = score.total;
+            row.provisional = score.provisional;
+            row.cells = score.indicators.map((indicator) => ({
+              ...indicator,
+              metric: metricsByKey.get(indicator.key),
+              score: indicator.normalizedScore,
+              candidateRaw: indicator.rawValue
+            }));
+          }
+          currentWeights = validWeights;
+          for (const metric of metrics) metric.weight = currentWeights[metric.key];
+          updateWeightStatus();
+          addSummary();
+          addScoringGuide();
+          renderMethodologyIndicators();
+          renderExistingCampusScores(validWeights);
+          renderRankings();
+          renderCampusComparison();
+          render();
+          renderCustomSchools();
+          updateWeightStatus();
+          if (document.getElementById("campus-details").open && showingPriorityDetails && selectedCustomCampusId) {
+            const selectedRow = customSchoolRows().find((row) => row.comparison.id === selectedCustomCampusId);
+            if (selectedRow) showPriorityDetails(selectedRow, true);
+          } else if (document.getElementById("campus-details").open && showingPriorityDetails) {
+            const selectedRow = rows.find((row) => row.comparison.id === selectedCampusId);
+            if (selectedRow) showPriorityDetails(selectedRow);
+          } else if (document.getElementById("campus-details").open && selectedMetricKey) {
+            const selectedRow = rows.find((row) => row.comparison.id === selectedCampusId);
+            const selectedCell = selectedRow?.cells.find((cell) => cell.key === selectedMetricKey);
+            if (selectedRow && selectedCell) showMetricDetails(selectedRow, selectedCell);
+          } else if (document.getElementById("campus-details").open && selectedCampusId) {
+            const selectedRow = rows.find((row) => row.comparison.id === selectedCampusId);
+            if (selectedRow) renderCampusDetails(selectedRow);
+          }
+        } catch (error) {
+          const message = error instanceof Error ? error.message : "The scores could not be recalculated.";
+          updateWeightStatus(message);
+          console.error("Campus score recalculation failed.", error);
+        }
+      }
+
+      function resetWeights() {
+        for (const indicator of SCORING.indicators) {
+          document.getElementById(`weight-${indicator.key}`).value = String(indicator.weight * 100);
+        }
+        updateWeights();
+      }
+
+      function populateStateFilter() {
+        const states = [...new Set(rows.map((row) => row.comparison.state))].sort((a, b) => a.localeCompare(b));
+        const select = document.getElementById("state-filter");
+        select.innerHTML = `<option value="all">All states</option>` +
+          states.map((state) => `<option value="${escapeHtml(state)}">${escapeHtml(state)}</option>`).join("");
+      }
+
+      function priorityRankMap() {
+        return new Map([...rows].sort(comparePriority).map((row, index) => [row.comparison.id, index + 1]));
+      }
+
+      function sortRankingRows(items) {
+        const { key, direction } = rankingSort;
+        const multiplier = direction === "asc" ? 1 : -1;
+        const ranks = key === "rank" ? priorityRankMap() : null;
+        return [...items].sort((a, b) => {
+          if (key === "priorityScore") {
+            if (a.provisional !== b.provisional) return a.provisional ? 1 : -1;
+            if (a.priorityScore === null || b.priorityScore === null) {
+              return a.priorityScore === b.priorityScore ? a.comparison.campus.localeCompare(b.comparison.campus) : a.priorityScore === null ? 1 : -1;
+            }
+            return (a.priorityScore - b.priorityScore) * multiplier || a.comparison.campus.localeCompare(b.comparison.campus);
+          }
+          if (key === "rank") {
+            return (ranks.get(a.comparison.id) - ranks.get(b.comparison.id)) * multiplier;
+          }
+          let result = 0;
+          if (key === "campus") result = a.comparison.campus.localeCompare(b.comparison.campus);
+          else if (key === "state") result = a.comparison.state.localeCompare(b.comparison.state);
+          else if (key === "enrollment") result = numericValue(a.comparison.undergrad_enrollment) - numericValue(b.comparison.undergrad_enrollment);
+          else if (key === "completeness") result = a.score.dataCompleteness.fraction - b.score.dataCompleteness.fraction;
+          return result * multiplier || a.comparison.campus.localeCompare(b.comparison.campus);
+        });
+      }
+
+      function renderRankingsHeader() {
+        const columns = [
+          ["rank", "Rank"],
+          ["campus", "University"],
+          ["state", "State"],
+          ["enrollment", "Undergraduate enrollment"],
+          ["priorityScore", "Priority score"],
+          ["completeness", "Data completeness"]
+        ];
+        document.getElementById("rankings-head").innerHTML = `<tr>${columns.map(([key, label]) => {
+          const direction = rankingSort.key === key ? rankingSort.direction : null;
+          const ariaSort = direction ? (direction === "asc" ? "ascending" : "descending") : "none";
+          const indicator = direction === "asc" ? " ↑" : direction === "desc" ? " ↓" : "";
+          return `<th scope="col" aria-sort="${ariaSort}"><button type="button" class="sort-button" data-sort-key="${key}">${label}${indicator}</button></th>`;
+        }).join("")}<th scope="col">Compare</th></tr>`;
+      }
+
+      function renderRankings() {
+        if (!rows.length) return;
+        const query = normalize(document.getElementById("rankings-search").value);
+        const state = document.getElementById("state-filter").value;
+        const filtered = rows.filter((row) => {
+          const university = normalize(row.comparison.campus);
+          return (!query || university.includes(query)) && (state === "all" || row.comparison.state === state);
+        });
+        const visible = sortRankingRows(filtered);
+        const ranks = priorityRankMap();
+        renderRankingsHeader();
+        document.getElementById("rankings-count").textContent = `${visible.length} of ${rows.length} prospective campuses`;
+        document.getElementById("rankings-empty").hidden = visible.length > 0;
+        document.getElementById("rankings-table").hidden = visible.length === 0;
+        document.getElementById("rankings-body").innerHTML = visible.map((row) => {
+          const completeness = row.score.dataCompleteness;
+          const score = row.priorityScore === null ? "N/A" : `${row.priorityScore.toFixed(2)} / 100`;
+          const enrollment = formatValue(metricsByKey.get("undergrad_enrollment"), row.comparison.undergrad_enrollment);
+          return `<tr>
+            <td class="rank">${ranks.get(row.comparison.id)}</td>
+            <td><button class="campus-button" type="button" data-campus-id="${escapeHtml(row.comparison.id)}">${schoolIdentityHtml(row.comparison.id, row.comparison.campus)}</button></td>
+            <td>${escapeHtml(row.comparison.state)}</td>
+            <td>${escapeHtml(enrollment)}</td>
+            <td><button class="score-detail-button rank-score" type="button" data-priority-breakdown="${escapeHtml(row.comparison.id)}" aria-label="View priority score breakdown for ${escapeHtml(row.comparison.campus)}">${score}</button>${row.provisional ? `<span class="provisional-label">Provisional subtotal</span>` : ""}</td>
+            <td>${completeness.availableCount} / ${completeness.indicatorCount} (${(completeness.fraction * 100).toFixed(0)}%)</td>
+            <td><input class="compare-checkbox" type="checkbox" data-compare-id="${escapeHtml(row.comparison.id)}" aria-label="Compare ${escapeHtml(row.comparison.campus)}" ${comparedCampusIds.has(row.comparison.id) ? "checked" : ""}></td>
+          </tr>`;
+        }).join("");
+        renderCampusComparison();
+      }
+
+      function renderCampusComparison() {
+        const panel = document.getElementById("campus-comparison-panel");
+        const status = document.getElementById("compare-status");
+        const selectedRows = rows.filter((row) => comparedCampusIds.has(row.comparison.id)).sort(comparePriority);
+        status.textContent = selectedRows.length === 0
+          ? "No campuses selected."
+          : selectedRows.length === 1
+            ? "Select one more campus to compare."
+            : `${selectedRows.length} campuses selected.`;
+        panel.hidden = selectedRows.length < 2;
+        if (selectedRows.length < 2) return;
+
+        const ranks = priorityRankMap();
+        const totals = selectedRows.map((row) => row.priorityScore).filter((score) => score !== null);
+        const highestTotal = totals.length > 1 ? Math.max(...totals) : null;
+        const lowestTotal = totals.length > 1 ? Math.min(...totals) : null;
+        const header = `<thead><tr><th scope="col">Indicator</th>${selectedRows.map((row) => {
+          const category = priorityCategory(row.priorityScore);
+          const totalClass = highestTotal !== null && highestTotal !== lowestTotal && row.priorityScore === highestTotal
+            ? "compare-best"
+            : lowestTotal !== null && highestTotal !== lowestTotal && row.priorityScore === lowestTotal
+              ? "compare-low"
+              : "";
+          const score = row.priorityScore === null ? "Not scored" : `${row.priorityScore.toFixed(2)} / 100`;
+          return `<th scope="col">
+            <span class="compare-campus-name">${schoolIdentityHtml(row.comparison.id, row.comparison.campus)}</span>
+            <span class="compare-campus-meta">${escapeHtml(row.comparison.state)} · Rank #${ranks.get(row.comparison.id)}</span>
+            <span class="compare-campus-meta">Priority score: <span class="compare-score ${totalClass}">${score}${row.provisional ? " · provisional" : ""}</span></span>
+            <span class="compare-campus-meta">${escapeHtml(category.label)}</span>
+          </th>`;
+        }).join("")}</tr></thead>`;
+        const indicatorRows = metrics.map((metric) => {
+          const cells = selectedRows.map((row) => {
+            const cell = row.cells.find((item) => item.key === metric.key);
+            if (!cell) throw new Error(`The score breakdown is missing ${metric.key} for ${row.comparison.campus}.`);
+            const scores = selectedRows.map((candidate) =>
+              candidate.cells.find((item) => item.key === metric.key)?.score
+            ).filter((score) => score !== null && score !== undefined);
+            const highest = scores.length > 1 ? Math.max(...scores) : null;
+            const lowest = scores.length > 1 ? Math.min(...scores) : null;
+            const best = highest !== null && highest !== lowest && cell.score === highest;
+            const low = lowest !== null && highest !== lowest && cell.score === lowest;
+            const scoreClass = best ? "compare-best" : low ? "compare-low" : "";
+            const rawValue = cell.candidateRaw === null || cell.candidateRaw === undefined
+              ? "Missing"
+              : formatValue(metric, cell.candidateRaw);
+            const normalizedScore = cell.score === null ? "Missing" : `${cell.score.toFixed(2)} / 100`;
+            const weight = `${(cell.weight * 100).toFixed(2)}%`;
+            const contribution = cell.weightedContribution === null
+              ? "Missing"
+              : `${cell.weightedContribution.toFixed(2)} points`;
+            return `<td class="compare-cell">
+              <div><span class="compare-cell-label">Raw value:</span> ${escapeHtml(rawValue)}</div>
+              <div><span class="compare-cell-label">Normalized:</span> <span class="compare-score ${scoreClass}">${normalizedScore}</span></div>
+              <div><span class="compare-cell-label">Weight:</span> ${weight}</div>
+              <div><span class="compare-cell-label">Contribution:</span> ${contribution}</div>
+            </td>`;
+          }).join("");
+          return `<tr><th scope="row">${escapeHtml(metric.label)}</th>${cells}</tr>`;
+        }).join("");
+        const conditionRows = SCORING.conditions.map((condition) => {
+          const weight = metrics
+            .filter((metric) => metric.condition === condition.key)
+            .reduce((sum, metric) => sum + metric.weight, 0);
+          const cells = selectedRows.map((row) => `<td class="compare-cell">
+            <div><span class="compare-cell-label">Subtotal:</span> ${row.score.conditionSubtotals[condition.key].toFixed(2)} points</div>
+            <div><span class="compare-cell-label">Active condition weight:</span> ${(weight * 100).toFixed(0)}%</div>
+          </td>`).join("");
+          return `<tr><th scope="row">${escapeHtml(condition.label)}</th>${cells}</tr>`;
+        }).join("");
+        const body = `<tbody>${indicatorRows}${conditionRows}</tbody>`;
+        document.getElementById("comparison-table").innerHTML = header + body;
+      }
+
+      function csvCell(value) {
+        if (value === null || value === undefined) return "";
+        let text = String(value);
+        if (/^\s*[=+\-@]/.test(text)) text = `'${text}`;
+        return `"${text.replace(/"/g, '""')}"`;
+      }
+
+      const customCsvHeaders = [
+        "campus",
+        "state",
+        "undergrad_enrollment",
+        "pct_on_campus",
+        "convenience_1mi",
+        "median_family_income",
+        "walk_score"
+      ];
+
+      function customSchoolRows() {
+        const scores = SCORING.scoreComparisons(customSchools, currentWeights);
+        return scores.map((score) => ({
+          comparison: customSchools.find((school) => school.id === score.id),
+          score,
+          priorityScore: score.total,
+          provisional: score.provisional,
+          cells: score.indicators.map((indicator) => ({
+            ...indicator,
+            metric: metricsByKey.get(indicator.key),
+            score: indicator.normalizedScore,
+            candidateRaw: indicator.rawValue
+          }))
+        }));
+      }
+
+      function savedCustomSchoolRecord(school) {
+        return {
+          id: school.id,
+          campus: school.campus,
+          state: school.state,
+          ...Object.fromEntries(customCsvHeaders.slice(2).map((key) => [key, school[key]]))
+        };
+      }
+
+      function loadSavedCustomSchools() {
+        const stored = localStorage.getItem(customSchoolsStorageKey);
+        if (stored === null) return;
+        const records = JSON.parse(stored);
+        if (!Array.isArray(records)) throw new Error("Saved school data has an invalid format.");
+
+        const loaded = [];
+        const ids = new Set();
+        for (const [index, record] of records.entries()) {
+          if (!record || typeof record.id !== "string" || !/^custom-school-\d+$/.test(record.id)) {
+            throw new Error(`Saved school ${index + 1} has an invalid ID.`);
+          }
+          if (ids.has(record.id)) throw new Error(`Saved school data contains duplicate IDs (${record.id}).`);
+          const school = {};
+          for (const header of customCsvHeaders) {
+            const value = record[header];
+            if (header === "campus" || header === "state") {
+              if (typeof value !== "string") throw new Error(`Saved school ${index + 1} is missing ${header}.`);
+              school[header] = value;
+            } else {
+              if (typeof value !== "number" || !Number.isFinite(value)) {
+                throw new Error(`Saved school ${index + 1} has an invalid ${header} value.`);
+              }
+              school[header] = value;
+            }
+          }
+          validateCustomSchool(school, `Saved school ${index + 1}`);
+          if (customSchoolDuplicate(school.campus, school.state, loaded)) {
+            throw new Error(`Saved school data contains duplicate schools: ${school.campus} (${school.state}).`);
+          }
+          school.id = record.id;
+          ids.add(record.id);
+          loaded.push(school);
+          customSchoolSequence = Math.max(customSchoolSequence, Number(record.id.slice("custom-school-".length)));
+        }
+
+        customSchools.push(...loaded);
+        for (const id of ids) savedCustomSchoolIds.add(id);
+      }
+
+      function persistSavedCustomSchools(nextSavedIds) {
+        const records = customSchools
+          .filter((school) => nextSavedIds.has(school.id))
+          .map(savedCustomSchoolRecord);
+        localStorage.setItem(customSchoolsStorageKey, JSON.stringify(records));
+      }
+
+      function renderCustomSchools() {
+        const container = document.getElementById("custom-results");
+        const clearButton = document.getElementById("custom-clear-all");
+        clearButton.hidden = customSchools.length === 0;
+        if (!customSchools.length) {
+          container.innerHTML = `<div class="custom-empty">No custom schools yet. Add one manually or import a CSV to see its score here.</div>`;
+          return;
+        }
+
+        const rowsForCustomSchools = customSchoolRows();
+        container.innerHTML = rowsForCustomSchools.map((row) => `
+          <article class="custom-result">
+            <div class="custom-result-head">
+              <div><h3>${escapeHtml(row.comparison.campus)}</h3><div class="custom-result-meta">${escapeHtml(row.comparison.state)} · ${row.score.dataCompleteness.availableCount}/${row.score.dataCompleteness.indicatorCount} indicators${row.provisional ? " · provisional" : ""}</div></div>
+              <div class="custom-result-actions">
+                <span class="custom-result-score">${row.priorityScore === null ? "N/A" : `${row.priorityScore.toFixed(2)} / 100`}</span>
+                <button class="custom-secondary-button" type="button" data-custom-breakdown="${escapeHtml(row.comparison.id)}">View score breakdown</button>
+                <button class="custom-secondary-button" type="button" data-custom-save="${escapeHtml(row.comparison.id)}" aria-pressed="${savedCustomSchoolIds.has(row.comparison.id)}">${savedCustomSchoolIds.has(row.comparison.id) ? "Unsave" : "Save"}</button>
+                <button class="custom-remove-button" type="button" data-custom-remove="${escapeHtml(row.comparison.id)}" aria-label="Remove ${escapeHtml(row.comparison.campus)}">Remove</button>
+              </div>
+            </div>
+            <div class="custom-condition-grid">${SCORING.conditions.map((condition) => `
+              <div class="custom-condition">${escapeHtml(condition.label)}<strong>${row.score.conditionSubtotals[condition.key].toFixed(2)} pts</strong></div>
+            `).join("")}</div>
+          </article>`).join("");
+      }
+
+      function nextCustomSchoolId() {
+        customSchoolSequence += 1;
+        return `custom-school-${customSchoolSequence}`;
+      }
+
+      function customSchoolDuplicate(campus, state, pending = []) {
+        const identity = normalize(`${campus} ${state}`);
+        return [...customSchools, ...pending].some((school) => normalize(`${school.campus} ${school.state}`) === identity);
+      }
+
+      function parseCustomCsv(text) {
+        const rows = [];
+        let row = [];
+        let value = "";
+        let quoted = false;
+        for (let index = 0; index < text.length; index += 1) {
+          const character = text[index];
+          if (quoted) {
+            if (character === '"' && text[index + 1] === '"') {
+              value += '"';
+              index += 1;
+            } else if (character === '"') {
+              quoted = false;
+            } else {
+              value += character;
+            }
+          } else if (character === '"' && value.length === 0) {
+            quoted = true;
+          } else if (character === ",") {
+            row.push(value);
+            value = "";
+          } else if (character === "\n" || character === "\r") {
+            row.push(value);
+            if (row.some((cell) => cell.trim() !== "")) rows.push(row);
+            row = [];
+            value = "";
+            if (character === "\r" && text[index + 1] === "\n") index += 1;
+          } else {
+            value += character;
+          }
+        }
+        if (quoted) throw new Error("The CSV has an unclosed quoted field.");
+        row.push(value);
+        if (row.some((cell) => cell.trim() !== "")) rows.push(row);
+        return rows;
+      }
+
+      function normalizeCsvHeader(header) {
+        return header.replace(/^\uFEFF/, "").trim().toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
+      }
+
+      function csvNumber(value, rowNumber, header) {
+        const normalized = value.trim().replace(/,/g, "");
+        if (!normalized || !/^[-+]?(?:\d+(?:\.\d*)?|\.\d+)$/.test(normalized)) {
+          throw new Error(`Row ${rowNumber}: "${header}" must be a number.`);
+        }
+        const number = Number(normalized);
+        if (!Number.isFinite(number)) throw new Error(`Row ${rowNumber}: "${header}" must be a finite number.`);
+        return number;
+      }
+
+      function validateCustomSchool(school, label) {
+        if (!school.campus.trim()) throw new Error(`${label}: enter a school name.`);
+        if (!school.state.trim()) throw new Error(`${label}: enter a state.`);
+        const integerKeys = ["undergrad_enrollment", "convenience_1mi"];
+        for (const key of customCsvHeaders.slice(2)) {
+          const value = Number(school[key]);
+          const metric = metricsByKey.get(key);
+          if (!Number.isFinite(value) || value < 0) throw new Error(`${label}: ${metric.label} must be a non-negative number.`);
+          if (integerKeys.includes(key) && !Number.isInteger(value)) throw new Error(`${label}: ${metric.label} must be a whole number.`);
+        }
+        if (Number(school.pct_on_campus) > 100) throw new Error(`${label}: students living on campus must be between 0 and 100%.`);
+        if (Number(school.walk_score) > 100) throw new Error(`${label}: Walk Score must be between 0 and 100.`);
+      }
+
+      function addCustomSchools(schools) {
+        for (const school of schools) school.id = nextCustomSchoolId();
+        customSchools.push(...schools);
+        renderCustomSchools();
+      }
+
+      function downloadCustomCsvTemplate() {
+        const csv = `${customCsvHeaders.map(csvCell).join(",")}\r\n`;
+        const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = "snag-custom-schools-template.csv";
+        document.body.append(link);
+        link.click();
+        link.remove();
+        window.setTimeout(() => URL.revokeObjectURL(url), 0);
+      }
+
+      function setCustomStatus(element, message, isError = false) {
+        element.textContent = message;
+        element.setAttribute("role", isError ? "alert" : "status");
+      }
+
+      function importCustomSchools(text) {
+        const table = parseCustomCsv(text);
+        if (table.length < 2) throw new Error("The CSV must include a header row and at least one school.");
+        const headers = table[0].map(normalizeCsvHeader);
+        const headerIndexes = new Map(headers.map((header, index) => [header, index]));
+        const missingHeaders = customCsvHeaders.filter((header) => !headerIndexes.has(header));
+        if (missingHeaders.length) throw new Error(`Missing required CSV headers: ${missingHeaders.join(", ")}.`);
+        if (headerIndexes.size !== headers.length) throw new Error("The CSV contains duplicate column headers.");
+
+        const imported = [];
+        const errors = [];
+        for (const [index, cells] of table.slice(1).entries()) {
+          const rowNumber = index + 2;
+          const school = {};
+          for (const header of customCsvHeaders) {
+            const cell = cells[headerIndexes.get(header)];
+            if (cell === undefined) {
+              errors.push(`Row ${rowNumber}: missing "${header}" value.`);
+              continue;
+            }
+            if (header === "campus" || header === "state") school[header] = cell.trim();
+            else {
+              try {
+                school[header] = csvNumber(cell, rowNumber, header);
+              } catch (error) {
+                errors.push(error.message);
+              }
+            }
+          }
+          try {
+            validateCustomSchool(school, `Row ${rowNumber}`);
+            if (customSchoolDuplicate(school.campus, school.state, imported)) {
+              throw new Error(`Row ${rowNumber}: ${school.campus} (${school.state}) is already in the custom results.`);
+            }
+            imported.push(school);
+          } catch (error) {
+            errors.push(error.message);
+          }
+        }
+        if (errors.length) {
+          const detail = errors.slice(0, 5).join(" ");
+          throw new Error(`${errors.length} CSV issue${errors.length === 1 ? "" : "s"} found. Nothing was imported. ${detail}${errors.length > 5 ? " Fix the remaining rows and import again." : ""}`);
+        }
+        if (!imported.length) throw new Error("No school rows were found to import.");
+        addCustomSchools(imported);
+        return imported.length;
+      }
+
+      function setupCustomSchoolEvaluator() {
+        const manualStatus = document.getElementById("custom-manual-status");
+        const csvStatus = document.getElementById("custom-csv-status");
+        const saveStatus = document.getElementById("custom-save-status");
+        try {
+          loadSavedCustomSchools();
+        } catch (error) {
+          setCustomStatus(saveStatus, `Saved schools could not be loaded: ${error instanceof Error ? error.message : "browser storage is unavailable."}`, true);
+        }
+        document.getElementById("custom-school-form").addEventListener("submit", (event) => {
+          event.preventDefault();
+          const form = event.currentTarget;
+          const formData = new FormData(form);
+          const school = { campus: String(formData.get("campus") ?? "").trim(), state: String(formData.get("state") ?? "").trim() };
+          for (const metric of metrics) {
+            const input = form.elements.namedItem(metric.key);
+            school[metric.key] = input.valueAsNumber;
+          }
+          try {
+            validateCustomSchool(school, "School");
+            if (customSchoolDuplicate(school.campus, school.state)) {
+              throw new Error(`${school.campus} (${school.state}) is already in the custom results.`);
+            }
+            addCustomSchools([school]);
+            form.reset();
+            setCustomStatus(manualStatus, `${school.campus} added and scored using the active weights.`);
+          } catch (error) {
+            setCustomStatus(manualStatus, error instanceof Error ? error.message : "The school could not be added.", true);
+          }
+        });
+
+        document.getElementById("custom-csv-form").addEventListener("submit", async (event) => {
+          event.preventDefault();
+          const input = document.getElementById("custom-csv-file");
+          const file = input.files[0];
+          if (!file) {
+            setCustomStatus(csvStatus, "Choose a CSV file to import.", true);
+            return;
+          }
+          try {
+            const count = importCustomSchools(await file.text());
+            input.value = "";
+            setCustomStatus(csvStatus, `${count} school${count === 1 ? "" : "s"} imported and scored using the active weights.`);
+          } catch (error) {
+            setCustomStatus(csvStatus, error instanceof Error ? error.message : "The CSV could not be imported.", true);
+          }
+        });
+
+        document.getElementById("custom-csv-template").addEventListener("click", downloadCustomCsvTemplate);
+        document.getElementById("custom-results").addEventListener("click", (event) => {
+          const breakdownButton = event.target instanceof Element ? event.target.closest("[data-custom-breakdown]") : null;
+          if (breakdownButton) {
+            const row = customSchoolRows().find((item) => item.comparison.id === breakdownButton.dataset.customBreakdown);
+            if (row) showPriorityDetails(row, true);
+            return;
+          }
+          const saveButton = event.target instanceof Element ? event.target.closest("[data-custom-save]") : null;
+          if (saveButton) {
+            const schoolId = saveButton.dataset.customSave;
+            const nextSavedIds = new Set(savedCustomSchoolIds);
+            if (nextSavedIds.has(schoolId)) nextSavedIds.delete(schoolId);
+            else nextSavedIds.add(schoolId);
+            try {
+              persistSavedCustomSchools(nextSavedIds);
+              savedCustomSchoolIds.clear();
+              for (const id of nextSavedIds) savedCustomSchoolIds.add(id);
+              setCustomStatus(saveStatus, savedCustomSchoolIds.has(schoolId) ? "School saved in this browser." : "School removed from saved schools.");
+              renderCustomSchools();
+            } catch (error) {
+              setCustomStatus(saveStatus, `Could not update saved schools: ${error instanceof Error ? error.message : "browser storage is unavailable."}`, true);
+            }
+            return;
+          }
+          const removeButton = event.target instanceof Element ? event.target.closest("[data-custom-remove]") : null;
+          if (!removeButton) return;
+          const index = customSchools.findIndex((school) => school.id === removeButton.dataset.customRemove);
+          if (index < 0) return;
+          if (savedCustomSchoolIds.has(customSchools[index].id)) {
+            const nextSavedIds = new Set(savedCustomSchoolIds);
+            nextSavedIds.delete(customSchools[index].id);
+            try {
+              persistSavedCustomSchools(nextSavedIds);
+              savedCustomSchoolIds.delete(customSchools[index].id);
+            } catch (error) {
+              setCustomStatus(saveStatus, `Could not remove the saved school: ${error instanceof Error ? error.message : "browser storage is unavailable."}`, true);
+              return;
+            }
+          }
+          const [removed] = customSchools.splice(index, 1);
+          if (selectedCustomCampusId === removed.id) document.getElementById("campus-details").close();
+          setCustomStatus(saveStatus, savedCustomSchoolIds.has(removed.id) ? "" : "School removed from custom results.");
+          renderCustomSchools();
+        });
+        document.getElementById("custom-clear-all").addEventListener("click", () => {
+          try {
+            localStorage.setItem(customSchoolsStorageKey, "[]");
+          } catch (error) {
+            setCustomStatus(saveStatus, `Could not clear saved schools: ${error instanceof Error ? error.message : "browser storage is unavailable."}`, true);
+            return;
+          }
+          customSchools.length = 0;
+          savedCustomSchoolIds.clear();
+          selectedCustomCampusId = null;
+          if (showingPriorityDetails) document.getElementById("campus-details").close();
+          renderCustomSchools();
+          setCustomStatus(saveStatus, "All custom results and saved schools cleared.");
+          setCustomStatus(manualStatus, "Custom school results cleared.");
+          setCustomStatus(csvStatus, "");
+        });
+        renderCustomSchools();
+      }
+
+      function exportRankingsCsv() {
+        const ranked = [...rows].sort(comparePriority);
+        const columns = [
+          "rank", "campus", "state", "priority_score", "provisional",
+          "completeness_available", "completeness_total", "completeness_fraction", "priority_category"
+        ];
+        for (const metric of metrics) {
+          columns.push(
+            `${metric.key}_raw_value`,
+            `${metric.key}_normalized_score`,
+            `${metric.key}_weight`,
+            `${metric.key}_weighted_contribution`
+          );
+        }
+        for (const condition of SCORING.conditions) {
+          columns.push(`${condition.key}_subtotal`);
+        }
+        const ranks = priorityRankMap();
+        const records = ranked.map((row) => {
+          const values = [
+            ranks.get(row.comparison.id),
+            row.comparison.campus,
+            row.comparison.state,
+            row.priorityScore,
+            row.provisional,
+            row.score.dataCompleteness.availableCount,
+            row.score.dataCompleteness.indicatorCount,
+            row.score.dataCompleteness.fraction,
+            priorityCategory(row.priorityScore).label
+          ];
+          for (const condition of SCORING.conditions) {
+            values.push(row.score.conditionSubtotals[condition.key]);
+          }
+          for (const metric of metrics) {
+            const cell = row.cells.find((item) => item.key === metric.key);
+            if (!cell) throw new Error(`The score breakdown is missing ${metric.key} for ${row.comparison.campus}.`);
+            values.push(cell.candidateRaw, cell.score, cell.weight, cell.weightedContribution);
+          }
+          return values.map(csvCell).join(",");
+        });
+        const csv = [columns.map(csvCell).join(","), ...records].join("\r\n");
+        const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = "snag-campus-expansion-priority.csv";
+        document.body.append(link);
+        link.click();
+        link.remove();
+        window.setTimeout(() => URL.revokeObjectURL(url), 0);
+      }
+
+      function showCampusDetails(row) {
+        selectedCampusId = row.comparison.id;
+        selectedMetricKey = null;
+        showingPriorityDetails = false;
+        selectedCustomCampusId = null;
+        const linkedFilter = document.getElementById("benchmark-filter");
+        const mapSearch = document.getElementById("search");
+        if (linkedFilter.value !== "all" || mapSearch.value) {
+          linkedFilter.value = "all";
+          mapSearch.value = "";
+          render();
+        }
+        highlightCampusMarker(selectedCampusId);
+        renderCampusDetails(row);
+        document.getElementById("campus-details").showModal();
+      }
+
+      function showMetricDetails(row, cell) {
+        selectedCampusId = row.comparison.id;
+        selectedMetricKey = cell.key;
+        showingPriorityDetails = false;
+        selectedCustomCampusId = null;
+        const metric = cell.metric;
+        const condition = conditionsByKey.get(metric.condition);
+        const conditionWeight = metrics
+          .filter((item) => item.condition === condition.key)
+          .reduce((sum, item) => sum + item.weight, 0);
+        const source = sourceFor(row.comparison, metric);
+        const sourceLink = source
+          ? `<a href="${escapeHtml(source)}" target="_blank" rel="noopener noreferrer">Open source</a>`
+          : "Source not recorded";
+        const score = cell.score;
+        let calculation;
+
+        if (score === null) {
+          calculation = `<p>The source value is missing or invalid, so this metric has no normalized score and contributes no points. The campus total is provisional; the other metric weights are not increased to compensate.</p>`;
+        } else {
+          const value = numericValue(cell.candidateRaw);
+          if (value === null) throw new Error(`The ${metric.label} score for ${row.comparison.campus} has no valid raw value.`);
+          const numerator = metric.direction === "higher"
+            ? value - metric.min
+            : metric.max - value;
+          const formula = metric.direction === "higher"
+            ? `100 × (${formatValue(metric, value)} − ${formatValue(metric, metric.min)}) ÷ (${formatValue(metric, metric.max)} − ${formatValue(metric, metric.min)})`
+            : `100 × (${formatValue(metric, metric.max)} − ${formatValue(metric, value)}) ÷ (${formatValue(metric, metric.max)} − ${formatValue(metric, metric.min)})`;
+          const unclampedScore = 100 * numerator / (metric.max - metric.min);
+          calculation = `<p><strong>Raw value:</strong> ${escapeHtml(formatValue(metric, cell.candidateRaw))}</p>
+            <p><strong>Formula:</strong> ${escapeHtml(formula)} = ${unclampedScore.toFixed(2)}. The result is clamped to the 0–100 range, giving <strong>${score.toFixed(2)} / 100</strong>.</p>
+            <p><strong>Weighted contribution:</strong> ${score.toFixed(2)} × ${(cell.weight * 100).toFixed(0)}% = <strong>${cell.weightedContribution.toFixed(2)} points</strong> added to the campus priority score.</p>`;
+        }
+
+        document.getElementById("details-title").textContent = metric.label;
+        document.getElementById("details-subtitle").textContent = `${row.comparison.campus} · ${row.comparison.state}`;
+        document.getElementById("details-content").innerHTML = `
+          <div class="details-overview metric-details-overview">
+            <article class="details-stat"><div class="details-stat-label">Normalized metric score</div><div class="details-score">${score === null ? "N/A" : `${score.toFixed(2)} / 100`}</div></article>
+            <article class="details-stat"><div class="details-stat-label">Metric weight</div><div class="details-score">${(cell.weight * 100).toFixed(0)}%</div></article>
+            <article class="details-stat"><div class="details-stat-label">Weighted contribution</div><div class="details-score">${cell.weightedContribution === null ? "N/A" : `${cell.weightedContribution.toFixed(2)} pts`}</div></article>
+          </div>
+          <h3 class="details-section-title">Why this metric matters</h3>
+          <div class="details-insights"><p>${escapeHtml(metric.meaning)}</p></div>
+          <h3 class="details-section-title">Business condition: ${escapeHtml(condition.label)}</h3>
+          <div class="details-insights">
+            <p><strong>${escapeHtml(condition.question)}</strong></p>
+            <p>This metric contributes to the ${escapeHtml(condition.label)} subtotal, which makes up ${(conditionWeight * 100).toFixed(0)}% of the total score at the active weights.</p>
+          </div>
+          <h3 class="details-section-title">How this score was calculated</h3>
+          <div class="details-insights">${calculation}</div>
+          <h3 class="details-section-title">Data and interpretation</h3>
+          <div class="details-insights">
+            <p><strong>Fixed scoring range:</strong> ${escapeHtml(formatValue(metric, metric.min))}–${escapeHtml(formatValue(metric, metric.max))}; ${escapeHtml(metric.direction)} is better. Values beyond the range are capped at 0 or 100.</p>
+            <p><strong>Data collected:</strong> ${escapeHtml(row.comparison.date_collected || "Date not recorded")}.</p>
+            <p><strong>Source:</strong> ${sourceLink}.</p>
+            <p>This value is a screening proxy only; it does not by itself establish actual demand or operating outcomes.</p>
+          </div>`;
+        document.getElementById("campus-details").showModal();
+      }
+
+      function showPriorityDetails(row, isCustom = false) {
+        selectedCampusId = isCustom ? null : row.comparison.id;
+        selectedMetricKey = null;
+        showingPriorityDetails = true;
+        selectedCustomCampusId = isCustom ? row.comparison.id : null;
+        const conditionRows = SCORING.conditions.map((condition) => {
+          const weight = metrics
+            .filter((metric) => metric.condition === condition.key)
+            .reduce((sum, metric) => sum + metric.weight, 0);
+          const subtotal = row.score.conditionSubtotals[condition.key];
+          return `<p><strong>${escapeHtml(condition.label)} (${(weight * 100).toFixed(0)}%):</strong> ${subtotal.toFixed(2)} points</p>`;
+        }).join("");
+        const contributions = row.cells.map((cell) => {
+          const contribution = cell.weightedContribution === null
+            ? "not scored"
+            : `${cell.score.toFixed(2)} × ${(cell.weight * 100).toFixed(0)}% = ${cell.weightedContribution.toFixed(2)} points`;
+          return `<p><strong>${escapeHtml(cell.metric.label)}:</strong> ${contribution}</p>`;
+        }).join("");
+        const completeness = row.score.dataCompleteness;
+
+        document.getElementById("details-title").textContent = "Campus Expansion Priority Score";
+        document.getElementById("details-subtitle").textContent = row.comparison.campus;
+        document.getElementById("details-content").innerHTML = `
+          <div class="details-overview metric-details-overview">
+            <article class="details-stat"><div class="details-stat-label">Priority score</div><div class="details-score">${row.priorityScore === null ? "N/A" : `${row.priorityScore.toFixed(2)} / 100`}${row.provisional ? " · provisional" : ""}</div></article>
+            <article class="details-stat"><div class="details-stat-label">${isCustom ? "Evaluation type" : "Priority rank"}</div><div class="details-score">${isCustom ? "Custom" : `#${priorityRankMap().get(row.comparison.id) ?? "—"} of ${rows.length}`}</div></article>
+            <article class="details-stat"><div class="details-stat-label">Data completeness</div><div class="details-score">${completeness.availableCount}/${completeness.indicatorCount}</div></article>
+          </div>
+          <h3 class="details-section-title">What the priority score means</h3>
+          <div class="details-insights">
+            <p>A weighted screening score for ${escapeHtml(row.comparison.campus)}, based only on its five indicator values. Higher scores indicate a stronger fit under the current assumptions and weights.</p>
+            <p>It is not a probability of success, a demand forecast, or a decision to expand. No comparison to an existing SNAG campus is used.</p>
+          </div>
+          <h3 class="details-section-title">How it is calculated</h3>
+          <div class="details-insights">
+            <p>The priority score is the sum of the four business-condition subtotals. Each condition subtotal is the sum of its metrics' normalized score multiplied by the active metric weight.</p>
+            ${conditionRows}
+          </div>
+          <h3 class="details-section-title">Metric weighted contributions</h3>
+          <div class="details-insights">${contributions}</div>
+          <h3 class="details-section-title">Data completeness</h3>
+          <div class="details-insights">
+            <p>${completeness.availableCount} of ${completeness.indicatorCount} indicators (${(completeness.fraction * 100).toFixed(1)}%) have usable data.</p>
+            <p>${row.provisional
+              ? "This is a provisional subtotal: missing or invalid values receive no normalized score or contribution, and the remaining metric weights are not redistributed."
+              : "All five indicator values are available, so this is a complete score."}</p>
+            <p>Research-linked SNAG campus data is shown for context elsewhere in the dashboard and does not affect this score.</p>
+          </div>`;
+        document.getElementById("campus-details").showModal();
+      }
+
+      function priorityCategory(score) {
+        if (typeof score !== "number" || !Number.isFinite(score)) return { label: "Unscored", className: "unscored" };
+        if (score >= 75) return { label: "Highest priority", className: "highest" };
+        if (score >= 60) return { label: "High priority", className: "high" };
+        if (score >= 40) return { label: "Moderate priority", className: "moderate" };
+        if (score >= 20) return { label: "Lower priority", className: "low" };
+        return { label: "Lowest priority", className: "lowest" };
+      }
+
+      function factorExtremes(cells) {
+        const scored = cells.filter((cell) => cell.score !== null);
+        if (!scored.length) return null;
+        const strongestScore = Math.max(...scored.map((cell) => cell.score));
+        const weakestScore = Math.min(...scored.map((cell) => cell.score));
+        return {
+          strongest: scored.filter((cell) => cell.score === strongestScore),
+          weakest: scored.filter((cell) => cell.score === weakestScore)
+        };
+      }
+
+      function factorNames(cells) {
+        return cells.map((cell) => `${cell.metric.label} (${cell.score.toFixed(2)}/100; ${cell.weightedContribution.toFixed(2)} weighted points)`).join("; ");
+      }
+
+      function renderCampusDetails(row) {
+        document.getElementById("details-title").innerHTML = schoolIdentityHtml(row.comparison.id, row.comparison.campus);
+        document.getElementById("details-subtitle").textContent =
+          `${row.comparison.state} · Undergraduate enrollment: ${formatValue(metricsByKey.get("undergrad_enrollment"), row.comparison.undergrad_enrollment)} · Research context: ${row.benchmark.campus}`;
+
+        const completeness = row.score.dataCompleteness;
+        const rank = priorityRankMap().get(row.comparison.id);
+        const scoreLabel = row.priorityScore === null ? "N/A" : `${row.priorityScore.toFixed(2)} / 100`;
+        const category = priorityCategory(row.priorityScore);
+        const categoryLabel = row.provisional ? `Provisional · ${category.label}` : category.label;
+        const extremes = factorExtremes(row.cells);
+        const insights = extremes
+          ? `<p><strong>Strongest scoring factor${extremes.strongest.length === 1 ? "" : "s"}:</strong> ${escapeHtml(factorNames(extremes.strongest))}. This reflects the highest normalized indicator score${extremes.strongest.length === 1 ? "" : "s"} in the current calculation.</p>
+             <p><strong>Weakest scoring factor${extremes.weakest.length === 1 ? "" : "s"}:</strong> ${escapeHtml(factorNames(extremes.weakest))}. This reflects the lowest normalized indicator score${extremes.weakest.length === 1 ? "" : "s"} in the current calculation.</p>`
+          : `<p>No indicator scores are available to identify stronger or weaker factors.</p>`;
+        const factorRows = row.cells.map((cell) => {
+          const source = sourceFor(row.comparison, cell.metric);
+          const date = row.comparison.date_collected;
+          const sourceDetails = source
+            ? `<a href="${escapeHtml(source)}" target="_blank" rel="noopener noreferrer">View data source</a>`
+            : "Source not recorded";
+          const score = cell.score;
+          const barColor = score === null ? "#aab4c2" : fitColor(score);
+          const scoreLabelForFactor = score === null ? "Not scored" : `${score.toFixed(2)} / 100`;
+          const contribution = cell.weightedContribution === null ? "N/A" : `${cell.weightedContribution.toFixed(2)} points`;
+          return `<article class="details-factor">
+            <div class="details-factor-head">
+              <span class="details-factor-name">${escapeHtml(cell.metric.label)}</span>
+              <span class="details-factor-value">Raw: ${escapeHtml(formatValue(cell.metric, cell.candidateRaw))} · Score: ${scoreLabelForFactor}</span>
+            </div>
+            <div class="details-bar-track" role="img" aria-label="${escapeHtml(cell.metric.label)} normalized score: ${score === null ? "not available" : `${score.toFixed(2)} out of 100`}">
+              <div class="details-bar" style="width:${score === null ? 0 : score}%;background:${barColor}"></div>
+            </div>
+            <div class="details-factor-meta">
+              <span>Weight: ${(cell.weight * 100).toFixed(2)}%</span>
+              <span>Weighted contribution: ${contribution}</span>
+              <span>Campus data date: ${escapeHtml(date || "Date not recorded")}</span>
+              <span class="details-factor-source">${sourceDetails}</span>
+            </div>
+          </article>`;
+        }).join("");
+        document.getElementById("details-content").innerHTML = `
+          <div class="details-overview">
+            <article class="details-stat"><div class="details-stat-label">Campus Expansion Priority Score</div><div class="details-score">${escapeHtml(scoreLabel)}${row.provisional ? " · provisional" : ""}</div></article>
+            <article class="details-stat"><div class="details-stat-label">Priority rank</div><div class="details-score">#${rank ?? "—"} of ${rows.length}</div></article>
+            <article class="details-stat"><div class="details-stat-label">Priority category</div><div><span class="details-category ${category.className}">${escapeHtml(categoryLabel)}</span></div></article>
+            <article class="details-stat"><div class="details-stat-label">Data completeness</div><div class="details-score">${completeness.availableCount}/${completeness.indicatorCount}</div><div class="details-completeness">${(completeness.fraction * 100).toFixed(0)}% indicators available</div></article>
+          </div>
+          <h3 class="details-section-title">Business condition subtotals</h3>
+          <div class="details-insights">${SCORING.conditions.map((condition) => {
+            const weight = metrics
+              .filter((metric) => metric.condition === condition.key)
+              .reduce((sum, metric) => sum + metric.weight, 0);
+            return `<p><strong>${escapeHtml(condition.label)} (${(weight * 100).toFixed(0)}%):</strong> ${row.score.conditionSubtotals[condition.key].toFixed(2)} points</p>`;
+          }).join("")}</div>
+          <h3 class="details-section-title">Indicator breakdown</h3>
+          <div class="details-factor-list">${factorRows}</div>
+          <h3 class="details-section-title">Scoring factors</h3>
+          <div class="details-insights">${insights}</div>
+          <p class="details-disclaimer">Strongest and weakest factors are identified by their normalized indicator scores; weighted contributions show each factor's effect on the total. These are outputs of the stated screening formula, not claims about actual customer demand, revenue, or profitability.${row.provisional ? " Missing indicators are not scored, and the total is not reweighted." : ""}</p>
+          <button type="button" class="details-map-link" data-focus-map="${escapeHtml(row.comparison.id)}">View highlighted campus on map</button>`;
+      }
+
+      function populateBenchmarkFilter() {
+        const options = new Map();
+        for (const row of rows) options.set(row.benchmark.id, row.benchmark.campus);
+        const select = document.getElementById("benchmark-filter");
+        select.innerHTML = `<option value="all">All research-linked SNAG campuses</option>` +
+          [...options].sort((a, b) => a[1].localeCompare(b[1]))
+            .map(([id, name]) => `<option value="${escapeHtml(id)}">${escapeHtml(name)}</option>`).join("");
+      }
+
+      function renderHeader() {
+        document.getElementById("table-head").innerHTML = `<tr>
+          <th scope="col" title="Hover or focus a rank number for its explanation">Priority rank</th>
+          <th scope="col">Expansion candidate</th>
+          <th scope="col" title="Research link shown for context only; it is not used in scoring">Linked SNAG campus (context)</th>
+          <th scope="col" title="Weighted sum of fixed-range normalized indicator scores; missing values make the subtotal provisional">Campus Expansion Priority Score</th>
+          ${metrics.map((metric) => {
+            const range = `${formatValue(metric, metric.min)}–${formatValue(metric, metric.max)}`;
+            const details = `${metric.meaning}\n\nFixed range: ${range}; ${metric.direction}-is-better.\n\nWeight: ${metric.weight}.\n\nThe cell shows the normalized 0–100 indicator score. Its weighted contribution to the total is normalized score × weight.`;
+            return `<th class="metric-head explainable" scope="col" title="${escapeHtml(metric.label)}" ${explanationAttributes(details)}>${escapeHtml(metric.short)}</th>`;
+          }).join("")}
+        </tr>`;
+      }
+
+      function render() {
+        const query = normalize(document.getElementById("search").value);
+        const benchmarkId = document.getElementById("benchmark-filter").value;
+        const visible = sortRows(rows.filter((row) => {
+          const haystack = normalize(`${row.comparison.campus} ${row.comparison.state} ${row.benchmark.campus}`);
+          return (!query || haystack.includes(query)) &&
+            (benchmarkId === "all" || row.benchmark.id === benchmarkId);
+        }));
+
+        const resultCount = document.getElementById("result-count");
+        resultCount.textContent = `${visible.length} of ${rows.length} schools`;
+        resultCount.setAttribute("class", "result-count explainable");
+        resultCount.setAttribute("tabindex", "0");
+        resultCount.setAttribute("aria-describedby", "number-explanation-tooltip");
+        resultCount.dataset.explanation =
+          `What it counts: schools currently visible after search and linked-campus context filters.\n\nHow calculated: ${visible.length} matching schools out of ${rows.length} total comparison schools. Changing the sort order does not change this count.`;
+        document.getElementById("empty-state").hidden = visible.length > 0;
+        document.querySelector("#table-head").closest("table").hidden = visible.length === 0;
+        updateMap(visible, benchmarkId);
+
+        document.getElementById("table-body").innerHTML = visible.map((row) => {
+          const rank = [...rows].sort(comparePriority).findIndex((item) => item.comparison.id === row.comparison.id) + 1;
+          const note = row.comparison.snag_note ?? "";
+          const benchmarkIdentity = row.benchmark.cluster
+            ? escapeHtml(row.benchmark.campus)
+            : schoolIdentityHtml(row.benchmark.id, row.benchmark.campus);
+          const rankExplanation =
+            `What rank ${rank} means: ${row.comparison.campus} ranks ${rank} of ${rows.length} prospective campuses by Campus Expansion Priority Score.\n\nHow calculated: complete totals sort first, followed by provisional subtotals; within each group, unrounded totals sort highest first. Exact ties are ordered alphabetically. Rank is global and does not change when you filter the list.\n\nMeaning: a screening order, not a decision to expand.`;
+          const cells = row.cells.map((cell) => {
+            const score = cell.score === null ? "N/A" : cell.score.toFixed(2);
+            const contribution = cell.score === null ? "" : `<span class="heat-contribution">+${cell.weightedContribution.toFixed(2)} pts</span>`;
+            return `<td><button class="heat heat-button${cell.score === null ? " heat-missing" : ""}" type="button" data-campus-breakdown="${escapeHtml(row.comparison.id)}" data-metric-key="${escapeHtml(cell.key)}" aria-label="View ${escapeHtml(cell.metric.short)} score breakdown for ${escapeHtml(row.comparison.campus)}">${score}${contribution}</button></td>`;
+          }).join("");
+          return `<tr>
+            <td class="rank"><span ${explanationAttributes(rankExplanation)}>${rank}</span></td>
+            <td><span class="school-name">${schoolIdentityHtml(row.comparison.id, row.comparison.campus)}</span><span class="school-state">${escapeHtml(row.comparison.state)}</span></td>
+            <td><span class="benchmark-name">${benchmarkIdentity}</span><span class="note" title="${escapeHtml(note)}">${escapeHtml(note)}</span></td>
+            <td class="fit-cell"><button class="score-detail-button fit-score" type="button" data-priority-breakdown="${escapeHtml(row.comparison.id)}" aria-label="View priority score breakdown for ${escapeHtml(row.comparison.campus)}">${row.priorityScore === null ? "N/A" : `${row.priorityScore.toFixed(2)} / 100`}</button>${row.provisional ? `<span class="note">Provisional · ${row.score.dataCompleteness.availableCount}/${row.score.dataCompleteness.indicatorCount} indicators</span>` : ""}</td>
+            ${cells}
+          </tr>`;
+        }).join("");
+      }
+
+      addSummary();
+      addScoringGuide();
+      renderMethodologyIndicators();
+      renderExistingCampusScores();
+      addWeightControls();
+      populateBenchmarkFilter();
+      populateStateFilter();
+      renderRankings();
+      renderHeader();
+      try {
+        initializeMap();
+      } catch (error) {
+        document.getElementById("campus-map").innerHTML =
+          `<div class="map-error" role="alert">${escapeHtml(error instanceof Error ? error.message : "The map could not be initialized.")}</div>`;
+      }
+      document.getElementById("source-note").textContent =
+        `Sources: ${DATA.sources.comparisons} for prospective-campus indicators and ${DATA.sources.benchmarks} for existing-campus map, score comparison, and research context. Existing SNAG campus metrics do not affect prospective-campus scores. Source URLs for prospective-campus metrics appear in each heatmap cell’s tooltip. School icons use official-domain favicons loaded through Google’s favicon service; initials appear if an icon is unavailable.`;
+
+      for (const id of ["search", "benchmark-filter", "sort"]) {
+        document.getElementById(id).addEventListener(id === "search" ? "input" : "change", render);
+      }
+      document.getElementById("rankings-search").addEventListener("input", renderRankings);
+      document.getElementById("state-filter").addEventListener("change", renderRankings);
+      document.getElementById("rankings-head").addEventListener("click", (event) => {
+        const button = event.target instanceof Element ? event.target.closest("[data-sort-key]") : null;
+        if (!button) return;
+        const key = button.dataset.sortKey;
+        rankingSort = {
+          key,
+          direction: rankingSort.key === key
+            ? rankingSort.direction === "desc" ? "asc" : "desc"
+            : ["campus", "state", "rank"].includes(key) ? "asc" : "desc"
+        };
+        renderRankings();
+      });
+      document.getElementById("rankings-body").addEventListener("click", (event) => {
+        const button = event.target instanceof Element ? event.target.closest("[data-campus-id]") : null;
+        if (!button) return;
+        const row = rows.find((item) => item.comparison.id === button.dataset.campusId);
+        if (row) showCampusDetails(row);
+      });
+      document.getElementById("rankings-body").addEventListener("click", (event) => {
+        const button = event.target instanceof Element ? event.target.closest("[data-priority-breakdown]") : null;
+        if (!button) return;
+        const row = rows.find((item) => item.comparison.id === button.dataset.priorityBreakdown);
+        if (row) showPriorityDetails(row);
+      });
+      document.getElementById("table-body").addEventListener("click", (event) => {
+        const button = event.target instanceof Element ? event.target.closest("[data-campus-breakdown]") : null;
+        if (!button) return;
+        const row = rows.find((item) => item.comparison.id === button.dataset.campusBreakdown);
+        const cell = row?.cells.find((item) => item.key === button.dataset.metricKey);
+        if (row && cell) showMetricDetails(row, cell);
+      });
+      document.getElementById("table-body").addEventListener("click", (event) => {
+        const button = event.target instanceof Element ? event.target.closest("[data-priority-breakdown]") : null;
+        if (!button) return;
+        const row = rows.find((item) => item.comparison.id === button.dataset.priorityBreakdown);
+        if (row) showPriorityDetails(row);
+      });
+      document.getElementById("rankings-body").addEventListener("change", (event) => {
+        const checkbox = event.target instanceof HTMLInputElement ? event.target.closest("[data-compare-id]") : null;
+        if (!checkbox) return;
+        const campusId = checkbox.dataset.compareId;
+        if (checkbox.checked && !comparedCampusIds.has(campusId) && comparedCampusIds.size >= 3) {
+          checkbox.checked = false;
+          const status = document.getElementById("compare-status");
+          status.textContent = "You can compare up to 3 campuses at a time.";
+          status.setAttribute("role", "alert");
+          return;
+        }
+        if (checkbox.checked) comparedCampusIds.add(campusId);
+        else comparedCampusIds.delete(campusId);
+        document.getElementById("compare-status").setAttribute("role", "status");
+        renderCampusComparison();
+      });
+      document.getElementById("export-csv").addEventListener("click", exportRankingsCsv);
+      setupDashboardTabs();
+      setupCustomSchoolEvaluator();
+      document.getElementById("details-close").addEventListener("click", () => document.getElementById("campus-details").close());
+      document.getElementById("details-content").addEventListener("click", (event) => {
+        const button = event.target instanceof Element ? event.target.closest("[data-focus-map]") : null;
+        if (!button) return;
+        highlightCampusMarker(button.dataset.focusMap);
+        document.getElementById("campus-map").scrollIntoView({ behavior: "smooth", block: "center" });
+      });
+      render();
+    })();
+  </script>
+</body>
+</html>
